@@ -73,3 +73,35 @@ codex
 # 이 저장소를 수정하려면 별도 작업 디렉토리에서 clone 후 변경/배포한다.
 ```
 
+## 포함된 스킬
+### `ct-calltree`
+Java Controller/Service 호출 트리를 분석하고 Call Tree 문서를 생성한다.  
+예: `$ct-calltree XXXController`  
+예: `$ct-calltree XXXController getXXX`
+
+### `ct-calltree-test`
+Call Tree 문서를 기준으로 `[TC:✅]` 대상 Java 단위 테스트를 만든다.  
+예: `$ct-calltree-test callTree-XXXController.md`  
+예: `$ct-calltree-test callTree-XXXController.md targetService.targetMethod()`
+
+### `ct-implement`
+단일 구현 요청을 end-to-end로 처리하고 연관 영향 범위 수정까지 같이 반영한다.  
+예: `$ct-implement 주문 조회 응답에 상태 코드 필드 추가`  
+예: `$ct-implement 결제 승인 전 유효성 검증 강화`
+
+### `ct-improve`
+프로젝트 개선 항목을 우선순위로 정리하고 overview/detail 문서를 생성한다.  
+예: `$ct-improve 프로젝트 개선안 정리`  
+예: `$ct-improve 성능/안정화 관점으로 개선 문서 생성`
+
+### `ct-init`
+저장소 초기화 직후 `.0_my/core_*` 문서 3종을 재생성하고  
+`AGENTS.md`를 라우팅 전용으로 정리한다.  
+예: `$ct-init`  
+예: `$ct-init 초기 코어 문서 다시 생성`
+
+### `ct-wiki`
+기술 문서를 Confluence 스타일의 표 중심 Wiki 형식으로 변환하거나 새로 작성한다.  
+예: `$ct-wiki .0_my/wiki_order_api.md`  
+예: `$ct-wiki 주문 생성 API 문서 작성`
+
