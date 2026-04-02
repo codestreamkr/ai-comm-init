@@ -1,0 +1,18 @@
+# 기본값: 모든 파일 제외
+*
+
+# 저장소 메타/문서
+!.gitignore
+!README.md
+!install.ps1
+!install.sh
+
+# 노션 정의 파일
+!AGENTS.md
+!skills/
+!skills/**
+skills/.system/
+skills/.system/**
+config.toml
+.git_backup_*
+

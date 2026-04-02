@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-wiki"
+  short_description: "Confluence 기술 문서를 표 중심 템플릿으로 생성"
+  default_prompt: "Use $ct-wiki to convert this draft into the Confluence template."
+policy:
+  allow_implicit_invocation: true

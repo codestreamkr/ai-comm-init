@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-calltree-test"
+  short_description: "CallTree 계약 기반 Java 단위 테스트 생성"
+  default_prompt: "Use $ct-calltree-test to read a CallTree document and generate Java unit tests for its [TC:✅] nodes."
+policy:
+  allow_implicit_invocation: true
