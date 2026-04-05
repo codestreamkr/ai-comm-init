@@ -1,107 +1,83 @@
 # ChatGPT Codex Init
 
-## 개요
-새로운 PC에서 동일한 Codex 환경을 구성하기 위한 가이드.  
+새로운 PC에서 동일한 ChatGPT Codex 환경을 구성하기 위한 가이드.
+설정 파일은 GitHub에서 관리하며, 설치 스크립트로 한 줄 설치 가능하다.
 
-https://github.com/fightmin/chatgpt-codex-init.git
+https://github.com/fightmin/chatgpt-codex-init
 
 ## 1단계: Codex 설치
-```javascript
-# Windows (PowerShell)
-npm install -g @openai/codex
-codex --version
 
-# Mac/Linux
+### Windows (PowerShell)
+```powershell
 npm install -g @openai/codex
-codex --version
+git clone https://github.com/fightmin/chatgpt-codex-init.git $env:TEMP\codex-init; & $env:TEMP\codex-init\install.ps1
 ```
 
-## 2단계: install 스크립트 실행
-```javascript
-# Windows (PowerShell)
-irm https://raw.githubusercontent.com/fightmin/chatgpt-codex-init/main/install.ps1 | iex
-
-# Mac/Linux
-curl -fsSL https://raw.githubusercontent.com/fightmin/chatgpt-codex-init/main/install.sh | bash
+### Mac/Linux
+```bash
+npm install -g @openai/codex
+git clone https://github.com/fightmin/chatgpt-codex-init.git /tmp/codex-init && bash /tmp/codex-init/install.sh
 ```
 
-## 3단계: 설정 파일 확인
-설치 스크립트 동작 요약:
-- 저장소를 임시 폴더에 먼저 clone
-- `~/.codex`가 이미 있어도 필요한 파일만 복사 적용
-- 기존 `.git`이 있으면 `.git_backup_YYYYMMDD-HHMMSS`로 백업
-- `AGENTS.md`는 있으면 `_backup_YYYYMMDD-HHMMSS` 파일로 백업 후 적용
-- 백업할 파일이 없어도 에러 없이 진행
+## 2단계: 설치 결과 확인
 
-적용되는 핵심 파일:
+설치 스크립트는 단순 파일 복사가 아니라, `~/.codex/`를 이 저장소와 연결된 git 저장소로 만든다.
+
+**설치 방식**
+
+1. 임시 경로에 저장소를 clone
+2. `.git`만 `~/.codex/`로 이동
+3. `~/.codex/`에서 `git reset --hard`로 파일 배포
+4. 설치 중 `codex mcp add`로 MCP 서버 등록
+
+결과적으로 `~/.codex/` 자체가 git 저장소가 된다. 원격 origin은 이 GitHub 저장소를 가리킨다.
+
+**설치 후 적용되는 파일**
+
 - `AGENTS.md`
 - `skills/`
+- MCP 서버: `playwright`, `context7`, `notion`, `figma`
 
-## 4단계: config.toml 설정 추가
-`~/.codex/config.toml` 파일 아래에 필요 항목만 직접 추가한다.
+`skills/` 아래 스킬은 `ct-` 네임스페이스를 기준으로 관리한다.
+현재 저장소가 제공하는 스킬도 모두 `ct-*` 이름을 사용한다.
 
-```toml
-[tui]
-status_line = ["model-with-reasoning", "five-hour-limit", "context-window-size", "weekly-limit", "context-used"]
+## 주의사항
 
-[mcp_servers.playwright]
-command = "npx"
-args = ["@playwright/mcp@latest"]
+### 기존 파일 백업
 
-[mcp_servers.context7]
-command = "npx"
-args = ["-y", "@upstash/context7-mcp"]
+`~/.codex/`가 git 저장소가 아닌 상태에서 설치하면, 아래 파일이 있을 경우 자동으로 백업된다.
 
-[mcp_servers.notion]
-url = "https://mcp.notion.com/mcp"
+- `AGENTS.md` → `AGENTS.md~backup`
 
-[mcp_servers.figma]
-url = "https://mcp.figma.com/mcp"
+`skills/`는 별도 백업하지 않는다. 이 저장소의 스킬은 `ct-` 네임스페이스를 사용하므로, 기존에 같은 이름의 `ct-*` 스킬이 있다면 설치본으로 갱신된다고 보는 편이 맞다. 반대로 이름이 겹치지 않는 사용자 스킬 파일은 그대로 남는다.
 
-[mcp_servers.linear]
-url = "https://mcp.linear.app/mcp"
-```
+기존 설정을 유지하려면 `AGENTS.md~backup`만 확인해서 필요한 내용을 병합하면 된다.
 
-## 5단계: 인증
-```javascript
+이미 git 저장소로 관리 중인 경우에는 백업 없이 `git fetch origin && git reset --hard origin/main`으로 최신 상태로 업데이트된다.
+
+### config.toml
+
+`config.toml`은 저장소에서 직접 덮어쓰지 않는다.
+대신 설치 중 `codex mcp add`를 실행해 필요한 MCP 설정만 로컬 `~/.codex/config.toml`에 등록한다.
+
+### 인증
+
+설치 후 `codex`를 실행해 다시 로그인해야 할 수 있다.
+
+```bash
 codex
 ```
+
 `auth.json`은 사용자별 인증 파일이므로 Git으로 관리하지 않는다.
 
-## 6단계: 설정 변경 후 동기화
-```javascript
-# 이 저장소를 수정하려면 별도 작업 디렉토리에서 clone 후 변경/배포한다.
+## 3단계: 설정 변경 후 동기화
+
+`~/.codex/`가 git 저장소이므로, 로컬에서 설정을 바꾼 뒤 바로 push해 다른 PC와 동기화할 수 있다.
+
+```bash
+# Windows
+cd $HOME/.codex && git add -A && git commit -m "update" && git push
+
+# Mac/Linux
+cd ~/.codex && git add -A && git commit -m "update" && git push
 ```
-
-## 포함된 스킬
-### `ct-calltree`
-Java Controller/Service 호출 트리를 분석하고 Call Tree 문서를 생성한다.  
-예: `$ct-calltree XXXController`  
-예: `$ct-calltree XXXController getXXX`
-
-### `ct-calltree-test`
-Call Tree 문서를 기준으로 `[TC:✅]` 대상 Java 단위 테스트를 만든다.  
-예: `$ct-calltree-test callTree-XXXController.md`  
-예: `$ct-calltree-test callTree-XXXController.md targetService.targetMethod()`
-
-### `ct-implement`
-단일 구현 요청을 end-to-end로 처리하고 연관 영향 범위 수정까지 같이 반영한다.  
-예: `$ct-implement 주문 조회 응답에 상태 코드 필드 추가`  
-예: `$ct-implement 결제 승인 전 유효성 검증 강화`
-
-### `ct-improve`
-프로젝트 개선 항목을 우선순위로 정리하고 overview/detail 문서를 생성한다.  
-예: `$ct-improve 프로젝트 개선안 정리`  
-예: `$ct-improve 성능/안정화 관점으로 개선 문서 생성`
-
-### `ct-init`
-저장소 초기화 직후 `.0_my/core_*` 문서 3종을 재생성하고  
-`AGENTS.md`를 라우팅 전용으로 정리한다.  
-예: `$ct-init`  
-예: `$ct-init 초기 코어 문서 다시 생성`
-
-### `ct-wiki`
-기술 문서를 Confluence 스타일의 표 중심 Wiki 형식으로 변환하거나 새로 작성한다.  
-예: `$ct-wiki .0_my/wiki_order_api.md`  
-예: `$ct-wiki 주문 생성 API 문서 작성`
-

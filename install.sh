@@ -1,57 +1,115 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+# ChatGPT Codex Init - Mac/Linux
+# Usage: git clone https://github.com/fightmin/chatgpt-codex-init.git /tmp/codex-init && bash /tmp/codex-init/install.sh
 
-REPO_URL="https://github.com/fightmin/chatgpt-codex-init.git"
-TARGET_DIR="${HOME}/.codex"
-TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-AGENTS_PATH="${TARGET_DIR}/AGENTS.md"
-TMP_CLONE_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t codex-init)"
-SOURCE_AGENTS_PATH="${TMP_CLONE_DIR}/AGENTS.md"
-SOURCE_SKILLS_PATH="${TMP_CLONE_DIR}/skills"
+set -e
 
-if ! command -v git >/dev/null 2>&1; then
-  echo "git 명령을 찾을 수 없습니다. Git 설치 후 다시 실행하세요." >&2
-  exit 1
-fi
-
-backup_and_remove_if_exists() {
-  local path="$1"
-  if [[ -e "${path}" ]]; then
-    local backup_path="${path}_backup_${TIMESTAMP}"
-    cp -a "${path}" "${backup_path}"
-    rm -rf "${path}"
-    echo "Backup created: ${backup_path}"
-  fi
-}
+REPO="${1:-https://github.com/fightmin/chatgpt-codex-init.git}"
+CODEX_DIR="$HOME/.codex"
+TEMP_DIR=""
 
 cleanup() {
-  if [[ -d "${TMP_CLONE_DIR}" ]]; then
-    rm -rf "${TMP_CLONE_DIR}"
-  fi
+    if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+        rm -rf "$TEMP_DIR"
+    fi
 }
 trap cleanup EXIT
 
-git clone "${REPO_URL}" "${TMP_CLONE_DIR}"
+register_stdio_mcp() {
+    local name="$1"
+    shift
 
-if [[ ! -d "${TARGET_DIR}" ]]; then
-  mkdir -p "${TARGET_DIR}"
+    if codex mcp get "$name" >/dev/null 2>&1; then
+        codex mcp remove "$name" >/dev/null 2>&1 || true
+    fi
+
+    if codex mcp add "$name" -- "$@"; then
+        echo "  registered: $name"
+    else
+        echo "  skipped: $name"
+    fi
+}
+
+register_http_mcp() {
+    local name="$1"
+    local url="$2"
+
+    if codex mcp get "$name" >/dev/null 2>&1; then
+        codex mcp remove "$name" >/dev/null 2>&1 || true
+    fi
+
+    if codex mcp add "$name" --url "$url"; then
+        echo "  registered: $name"
+    else
+        echo "  skipped: $name"
+    fi
+}
+
+echo "[1/4] Preparing ~/.codex/ ..."
+if [ ! -d "$CODEX_DIR" ]; then
+    mkdir -p "$CODEX_DIR"
+    echo "  ~/.codex/ created"
+else
+    echo "  ~/.codex/ already exists"
 fi
 
-if [[ -d "${TARGET_DIR}" ]]; then
-  backup_and_remove_if_exists "${AGENTS_PATH}"
+echo "[2/4] Connecting git repo..."
+if [ -d "$CODEX_DIR/.git" ]; then
+    cd "$CODEX_DIR"
+    existing=$(git remote get-url origin 2>/dev/null || true)
+    if [ -z "$existing" ]; then
+        git remote add origin "$REPO"
+    elif [ "$existing" != "$REPO" ]; then
+        git remote set-url origin "$REPO"
+    fi
+    git fetch origin
+    git reset --hard origin/main
+    echo "  updated to latest"
+else
+    if [ -e "$CODEX_DIR/AGENTS.md" ]; then
+        mv "$CODEX_DIR/AGENTS.md" "$CODEX_DIR/AGENTS.md~backup"
+        echo "  backed up: AGENTS.md -> AGENTS.md~backup"
+    fi
 
-  if [[ -d "${TARGET_DIR}/.git" ]]; then
-    git_backup_path="${TARGET_DIR}/.git_backup_${TIMESTAMP}"
-    mv "${TARGET_DIR}/.git" "${git_backup_path}"
-    echo "Backup created: ${git_backup_path}"
-  fi
+    TEMP_DIR="$(mktemp -d)"
+    git clone "$REPO" "$TEMP_DIR"
+    mv "$TEMP_DIR/.git" "$CODEX_DIR/.git"
 
-  cp "${SOURCE_AGENTS_PATH}" "${AGENTS_PATH}"
-
-  rm -rf "${TARGET_DIR}/skills"
-  cp -R "${SOURCE_SKILLS_PATH}" "${TARGET_DIR}/skills"
-
-  echo "Applied templates to: ${TARGET_DIR}"
+    cd "$CODEX_DIR"
+    git reset --hard HEAD
+    echo "  cloned and applied"
 fi
 
-echo "Done. Run 'codex' and login again (auth.json is user-specific)."
+echo "[3/4] Registering MCP servers..."
+if command -v codex >/dev/null 2>&1; then
+    register_stdio_mcp "playwright" npx -y @playwright/mcp@latest
+    register_stdio_mcp "context7" npx -y @upstash/context7-mcp
+    register_http_mcp "notion" "https://mcp.notion.com/mcp"
+    register_http_mcp "figma" "https://mcp.figma.com/mcp"
+else
+    echo "  skipped (codex not found)"
+fi
+
+echo "[4/4] Verifying..."
+echo ""
+echo "Installed files:"
+for f in AGENTS.md .gitignore config.toml; do
+    [ -f "$CODEX_DIR/$f" ] && echo "  + $f"
+done
+find "$CODEX_DIR/skills" -type f 2>/dev/null | while read -r file; do
+    echo "  + ${file#$CODEX_DIR/}"
+done
+
+echo ""
+echo "Done!"
+echo "  Location: $CODEX_DIR"
+echo "  Push changes: cd $CODEX_DIR && git add -A && git commit -m 'update' && git push"
+echo ""
+echo "Next: run 'codex' to authenticate and verify."
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+case "$SCRIPT_DIR" in
+    /tmp/*)
+        rm -rf "$SCRIPT_DIR"
+        ;;
+esac

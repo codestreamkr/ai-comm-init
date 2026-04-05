@@ -1,59 +1,132 @@
-Param()
+# ChatGPT Codex Init - Windows PowerShell
+# Usage: git clone https://github.com/fightmin/chatgpt-codex-init.git $env:TEMP\codex-init; & $env:TEMP\codex-init\install.ps1
+
+param(
+    [string]$Repo = "https://github.com/fightmin/chatgpt-codex-init.git"
+)
 
 $ErrorActionPreference = "Stop"
+$CodexDir = "$env:USERPROFILE\.codex"
+$GitDir = Join-Path $CodexDir ".git"
+$TempDir = $null
 
-$repoUrl = "https://github.com/fightmin/chatgpt-codex-init.git"
-$targetRoot = Join-Path $HOME ".codex"
-$timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$agentsPath = Join-Path $targetRoot "AGENTS.md"
-$tempClonePath = Join-Path $env:TEMP ("codex-init-" + [guid]::NewGuid().ToString("N"))
-$gitPath = Join-Path $targetRoot ".git"
-$sourceAgentsPath = Join-Path $tempClonePath "AGENTS.md"
-$sourceSkillsPath = Join-Path $tempClonePath "skills"
+function Register-StdioMcp {
+    param(
+        [string]$Name,
+        [string[]]$CommandArgs
+    )
 
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-  throw "git 명령을 찾을 수 없습니다. Git 설치 후 다시 실행하세요."
+    & codex mcp get $Name *> $null
+    if ($LASTEXITCODE -eq 0) {
+        & codex mcp remove $Name *> $null
+    }
+
+    $cmd = @("mcp", "add", $Name, "--") + $CommandArgs
+    & codex @cmd
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  registered: $Name"
+    } else {
+        Write-Host "  skipped: $Name"
+    }
 }
 
-function Backup-And-RemoveIfExists {
-  param([string]$Path)
+function Register-HttpMcp {
+    param(
+        [string]$Name,
+        [string]$Url
+    )
 
-  if (Test-Path -LiteralPath $Path) {
-    $backupPath = "${Path}_backup_${timestamp}"
-    Copy-Item -LiteralPath $Path -Destination $backupPath -Force
-    Remove-Item -LiteralPath $Path -Force
-    Write-Output "Backup created: $backupPath"
-  }
+    & codex mcp get $Name *> $null
+    if ($LASTEXITCODE -eq 0) {
+        & codex mcp remove $Name *> $null
+    }
+
+    $cmd = @("mcp", "add", $Name, "--url", $Url)
+    & codex @cmd
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  registered: $Name"
+    } else {
+        Write-Host "  skipped: $Name"
+    }
 }
 
 try {
-  git clone $repoUrl $tempClonePath
+    Write-Host "[1/4] Preparing ~/.codex/ ..." -ForegroundColor Cyan
+    if (-not (Test-Path $CodexDir)) {
+        New-Item -ItemType Directory -Path $CodexDir -Force | Out-Null
+        Write-Host "  ~/.codex/ created"
+    } else {
+        Write-Host "  ~/.codex/ already exists"
+    }
 
-  if (-not (Test-Path -LiteralPath $targetRoot)) {
-    New-Item -Path $targetRoot -ItemType Directory | Out-Null
-  }
+    Write-Host "[2/4] Connecting git repo..." -ForegroundColor Cyan
+    if (Test-Path $GitDir) {
+        Push-Location $CodexDir
+        $existing = git remote get-url origin 2>$null
+        if (-not $existing) {
+            git remote add origin $Repo
+        } elseif ($existing -ne $Repo) {
+            git remote set-url origin $Repo
+        }
+        git fetch origin
+        git reset --hard origin/main
+        Pop-Location
+        Write-Host "  updated to latest"
+    } else {
+        $agentsPath = Join-Path $CodexDir "AGENTS.md"
+        if (Test-Path $agentsPath) {
+            $backupPath = Join-Path $CodexDir "AGENTS.md~backup"
+            Move-Item $agentsPath $backupPath -Force
+            Write-Host "  backed up: AGENTS.md -> AGENTS.md~backup"
+        }
 
-  Backup-And-RemoveIfExists -Path $agentsPath
+        $TempDir = Join-Path $env:TEMP ("codex-init-clone-" + [guid]::NewGuid().ToString("N"))
+        git clone $Repo $TempDir
+        Move-Item (Join-Path $TempDir ".git") $GitDir
 
-  if (Test-Path -LiteralPath $gitPath) {
-    $gitBackupPath = Join-Path $targetRoot (".git_backup_" + $timestamp)
-    Move-Item -LiteralPath $gitPath -Destination $gitBackupPath -Force
-    Write-Output "Backup created: $gitBackupPath"
-  }
+        Push-Location $CodexDir
+        git reset --hard HEAD
+        Pop-Location
+        Write-Host "  cloned and applied"
+    }
 
-  Copy-Item -LiteralPath $sourceAgentsPath -Destination $agentsPath -Force
+    Write-Host "[3/4] Registering MCP servers..." -ForegroundColor Cyan
+    if (Get-Command codex -ErrorAction SilentlyContinue) {
+        Register-StdioMcp -Name "playwright" -CommandArgs @("npx", "-y", "@playwright/mcp@latest")
+        Register-StdioMcp -Name "context7" -CommandArgs @("npx", "-y", "@upstash/context7-mcp")
+        Register-HttpMcp -Name "notion" -Url "https://mcp.notion.com/mcp"
+        Register-HttpMcp -Name "figma" -Url "https://mcp.figma.com/mcp"
+    } else {
+        Write-Host "  skipped (codex not found)"
+    }
 
-  if (Test-Path -LiteralPath (Join-Path $targetRoot "skills")) {
-    Remove-Item -LiteralPath (Join-Path $targetRoot "skills") -Recurse -Force
-  }
-  Copy-Item -LiteralPath $sourceSkillsPath -Destination (Join-Path $targetRoot "skills") -Recurse -Force
+    Write-Host "[4/4] Verifying..." -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Installed files:" -ForegroundColor Green
+    foreach ($f in @("AGENTS.md", ".gitignore", "config.toml")) {
+        if (Test-Path (Join-Path $CodexDir $f)) {
+            Write-Host "  + $f"
+        }
+    }
+    Get-ChildItem (Join-Path $CodexDir "skills") -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+        $relative = $_.FullName.Substring($CodexDir.Length + 1).Replace("\", "/")
+        Write-Host "  + $relative"
+    }
 
-  Write-Output "Applied templates to: $targetRoot"
+    Write-Host ""
+    Write-Host "Done!" -ForegroundColor Green
+    Write-Host "  Location: $CodexDir"
+    Write-Host "  Push changes: cd $CodexDir && git add -A && git commit -m 'update' && git push"
+    Write-Host ""
+    Write-Host "Next: run 'codex' to authenticate and verify." -ForegroundColor Yellow
 }
 finally {
-  if (Test-Path -LiteralPath $tempClonePath) {
-    Remove-Item -LiteralPath $tempClonePath -Recurse -Force
-  }
-}
+    if ($TempDir -and (Test-Path $TempDir)) {
+        Remove-Item $TempDir -Recurse -Force
+    }
 
-Write-Output "Done. Run 'codex' and login again (auth.json is user-specific)."
+    $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+    if ($ScriptDir -like "$env:TEMP*") {
+        Remove-Item $ScriptDir -Recurse -Force
+    }
+}
