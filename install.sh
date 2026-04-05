@@ -15,15 +15,31 @@ cleanup() {
 }
 trap cleanup EXIT
 
+get_mcp_config() {
+    local name="$1"
+    codex mcp get "$name" 2>/dev/null || true
+}
+
 register_stdio_mcp() {
     local name="$1"
-    shift
+    local command="$2"
+    shift 2
+    local args="$*"
+    local current
 
-    if codex mcp get "$name" >/dev/null 2>&1; then
+    current="$(get_mcp_config "$name")"
+    if printf '%s\n' "$current" | grep -Fq "transport: stdio" \
+        && printf '%s\n' "$current" | grep -Fq "command: $command" \
+        && printf '%s\n' "$current" | grep -Fq "args: $args"; then
+        echo "  already configured: $name"
+        return
+    fi
+
+    if [ -n "$current" ]; then
         codex mcp remove "$name" >/dev/null 2>&1 || true
     fi
 
-    if codex mcp add "$name" -- "$@"; then
+    if codex mcp add "$name" -- "$command" "$@"; then
         echo "  registered: $name"
     else
         echo "  skipped: $name"
@@ -33,8 +49,16 @@ register_stdio_mcp() {
 register_http_mcp() {
     local name="$1"
     local url="$2"
+    local current
 
-    if codex mcp get "$name" >/dev/null 2>&1; then
+    current="$(get_mcp_config "$name")"
+    if printf '%s\n' "$current" | grep -Fq "transport: streamable_http" \
+        && printf '%s\n' "$current" | grep -Fq "url: $url"; then
+        echo "  already configured: $name"
+        return
+    fi
+
+    if [ -n "$current" ]; then
         codex mcp remove "$name" >/dev/null 2>&1 || true
     fi
 

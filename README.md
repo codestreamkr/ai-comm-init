@@ -59,6 +59,7 @@ git clone https://github.com/fightmin/chatgpt-codex-init.git /tmp/codex-init && 
 
 `config.toml`은 저장소에서 직접 덮어쓰지 않는다.
 대신 설치 중 `codex mcp add`를 실행해 필요한 MCP 설정만 로컬 `~/.codex/config.toml`에 등록한다.
+이미 같은 MCP 설정이 등록돼 있으면 재등록하지 않으므로, OAuth 화면도 다시 띄우지 않는다.
 
 ### 인증
 

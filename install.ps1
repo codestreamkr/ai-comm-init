@@ -10,14 +10,43 @@ $CodexDir = "$env:USERPROFILE\.codex"
 $GitDir = Join-Path $CodexDir ".git"
 $TempDir = $null
 
+function Get-McpConfigText {
+    param(
+        [string]$Name
+    )
+
+    try {
+        $output = (& codex mcp get $Name 2>$null | Out-String).Trim()
+        if ($LASTEXITCODE -eq 0) {
+            return $output
+        }
+    } catch {
+    }
+
+    return ""
+}
+
 function Register-StdioMcp {
     param(
         [string]$Name,
         [string[]]$CommandArgs
     )
 
-    & codex mcp get $Name *> $null
-    if ($LASTEXITCODE -eq 0) {
+    $current = Get-McpConfigText -Name $Name
+    $command = $CommandArgs[0]
+    $args = ($CommandArgs[1..($CommandArgs.Length - 1)] -join " ")
+
+    if (
+        $current -and
+        $current.Contains("transport: stdio") -and
+        $current.Contains("command: $command") -and
+        $current.Contains("args: $args")
+    ) {
+        Write-Host "  already configured: $Name"
+        return
+    }
+
+    if ($current) {
         & codex mcp remove $Name *> $null
     }
 
@@ -36,8 +65,17 @@ function Register-HttpMcp {
         [string]$Url
     )
 
-    & codex mcp get $Name *> $null
-    if ($LASTEXITCODE -eq 0) {
+    $current = Get-McpConfigText -Name $Name
+    if (
+        $current -and
+        $current.Contains("transport: streamable_http") -and
+        $current.Contains("url: $Url")
+    ) {
+        Write-Host "  already configured: $Name"
+        return
+    }
+
+    if ($current) {
         & codex mcp remove $Name *> $null
     }
 
