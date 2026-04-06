@@ -3,20 +3,20 @@
 새로운 PC에서 동일한 ChatGPT Codex 환경을 구성하기 위한 가이드.
 설정 파일은 GitHub에서 관리하며, 설치 스크립트로 한 줄 설치 가능하다.
 
-https://github.com/fightmin/chatgpt-codex-init
+https://github.com/codestreamkr/chatgpt-codex-init
 
 ## 1단계: Codex 설치
 
 ### Windows (PowerShell)
 ```powershell
 npm install -g @openai/codex
-git clone https://github.com/fightmin/chatgpt-codex-init.git $env:TEMP\codex-init; & $env:TEMP\codex-init\install.ps1
+git clone https://github.com/codestreamkr/chatgpt-codex-init.git $env:TEMP\codex-init; & $env:TEMP\codex-init\install.ps1
 ```
 
 ### Mac/Linux
 ```bash
 npm install -g @openai/codex
-git clone https://github.com/fightmin/chatgpt-codex-init.git /tmp/codex-init && bash /tmp/codex-init/install.sh
+git clone https://github.com/codestreamkr/chatgpt-codex-init.git /tmp/codex-init && bash /tmp/codex-init/install.sh
 ```
 
 ## 2단계: 설치 결과 확인
