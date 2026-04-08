@@ -1,0 +1,4 @@
+interface:
+  display_name: "ct-design-review"
+  short_description: "전문가 의견을 조율해 기능 설계 검토 문서를 만드는 스킬"
+  default_prompt: "Use $ct-design-review to collect expert opinions, reconcile conflicts, and write a design review markdown document."
