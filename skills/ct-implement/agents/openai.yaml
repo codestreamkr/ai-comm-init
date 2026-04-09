@@ -1,4 +1,4 @@
 interface:
-  display_name: "CT Implement"
-  short_description: "요구사항 기반 코드 구현·영향분석·테스트 일괄 처리"
-  default_prompt: "$ct-implement를 사용해 이 요구사항을 구현하고, 영향범위 수정·테스트 생성/보정·검증 보고까지 한 번에 완료해줘."
+  display_name: "ct-implement"
+  short_description: "검토 후 구현 범위를 확정하고 영향 수정까지 처리"
+  default_prompt: "Use $ct-implement to review this request or document set, conclude what can be implemented now, and if approved proceed with code changes and related impact updates."
