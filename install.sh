@@ -1,10 +1,10 @@
 #!/bin/bash
 # ChatGPT Codex Init - Mac/Linux
-# Usage: git clone https://github.com/fightmin/chatgpt-codex-init.git /tmp/codex-init && bash /tmp/codex-init/install.sh
+# Usage: git clone https://github.com/codestreamkr/chatgpt-codex-init.git /tmp/codex-init && bash /tmp/codex-init/install.sh
 
 set -e
 
-REPO="${1:-https://github.com/fightmin/chatgpt-codex-init.git}"
+REPO="${1:-https://github.com/codestreamkr/chatgpt-codex-init.git}"
 CODEX_DIR="$HOME/.codex"
 TEMP_DIR=""
 

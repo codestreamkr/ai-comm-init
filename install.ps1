@@ -1,8 +1,8 @@
 # ChatGPT Codex Init - Windows PowerShell
-# Usage: git clone https://github.com/fightmin/chatgpt-codex-init.git $env:TEMP\codex-init; & $env:TEMP\codex-init\install.ps1
+# Usage: git clone https://github.com/codestreamkr/chatgpt-codex-init.git $env:TEMP\codex-init; & $env:TEMP\codex-init\install.ps1
 
 param(
-    [string]$Repo = "https://github.com/fightmin/chatgpt-codex-init.git"
+    [string]$Repo = "https://github.com/codestreamkr/chatgpt-codex-init.git"
 )
 
 $ErrorActionPreference = "Stop"
