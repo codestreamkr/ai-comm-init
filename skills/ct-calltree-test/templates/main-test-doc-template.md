@@ -79,7 +79,7 @@
 1. 메인 테스트 현재 반영 범위가 partial이면 그 사실을 문서에도 표시
 2. 각 `testNN_*`는 `callNode -> 하위 테스트 메서드 -> 검증 의도`까지 적는다
 3. 메인 테스트 번호 순서는 CallTree 순서를 따른다
-4. CallTree의 `bundle`, `priority`, `mainTestGroup` 정보가 있으면 문서에도 같은 기준을 드러낸다
+4. CallTree의 `bundle`, `priority`와 테스트 스킬이 결정한 `mainTestGroup` 기준을 문서에도 드러낸다
 5. 흐름 트리에서 각 testNN 하위에 UnitTest 메서드명과 검증 의도를 한 줄씩 기재한다
 6. 단계별 해석의 "유지된 커버리지"는 흐름 트리의 그룹 단위로 커버 범위를 요약한다
 7. "별도 점검 필요 항목"은 현재 MainTest가 커버하지 못하는 영역을 명시한다

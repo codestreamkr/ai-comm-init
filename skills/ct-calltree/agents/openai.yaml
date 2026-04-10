@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-calltree"
-  short_description: "Java 호출 흐름 분석과 CallTree 문서 생성"
-  default_prompt: "Use $ct-calltree to analyze a Java controller or service and generate a structured CallTree with [TC:✅] nodes."
+  short_description: "Java 호출 흐름 분석과 테스트 보조 메타데이터 수집"
+  default_prompt: "Use $ct-calltree to analyze a Java controller or service, generate a structured CallTree, decide final [TC:✅] nodes, and capture compact test-relevant node metadata without treating this output as a hard contract for ct-calltree-test."
 policy:
   allow_implicit_invocation: true

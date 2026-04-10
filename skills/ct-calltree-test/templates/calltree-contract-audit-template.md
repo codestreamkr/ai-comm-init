@@ -1,5 +1,8 @@
 # CallTree Contract Audit
 
+이 문서에서 `mainTestClass`, `fixtureStrategy`, `mainTestGroup` 같은 값은
+CallTree가 강제한 계약이 아니라, 이번 실행에서 테스트 스킬이 결정한 값이다.
+
 ## 입력 계약 확인
 - callTree 문서: `{calltree-path}`
 - entryFlow: `{entry-flow}`
