@@ -1,0 +1,4 @@
+interface:
+  display_name: "spring"
+  short_description: "프로젝트 구조를 먼저 파악하고 Spring 작업을 조율"
+  default_prompt: "Use $spring to inspect the project first, follow the existing Spring conventions, and read only the topic-specific references needed for JPA, Security, Cloud, Batch, MVC, or testing."
