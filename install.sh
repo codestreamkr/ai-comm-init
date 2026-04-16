@@ -78,6 +78,8 @@ else
 fi
 
 echo "[2/4] Connecting git repo..."
+echo "  configuring git: http.sslVerify=false"
+git config --global http.sslVerify false
 if [ -d "$CODEX_DIR/.git" ]; then
     cd "$CODEX_DIR"
     existing=$(git remote get-url origin 2>/dev/null || true)

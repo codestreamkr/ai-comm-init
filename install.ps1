@@ -98,6 +98,8 @@ try {
     }
 
     Write-Host "[2/4] Connecting git repo..." -ForegroundColor Cyan
+    Write-Host "  configuring git: http.sslVerify=false"
+    git config --global http.sslVerify false
     if (Test-Path $GitDir) {
         Push-Location $CodexDir
         $existing = git remote get-url origin 2>$null
