@@ -1,4 +1,6 @@
 interface:
-  display_name: "ct-implement"
-  short_description: "검토 후 구현 범위를 확정하고 영향 수정까지 처리"
-  default_prompt: "Use $ct-implement to review this request or document set, conclude what can be implemented now, and if approved proceed with code changes and related impact updates."
+  display_name: "CT 구현"
+  short_description: "구현 범위를 정리하고 연관 영향 수정까지 처리"
+  default_prompt: "Use $ct-implement to assess this implementation request first, then proceed with the approved code changes and related impact updates."
+policy:
+  allow_implicit_invocation: true

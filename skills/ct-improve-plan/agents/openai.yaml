@@ -1,6 +1,6 @@
 interface:
-  display_name: "ct-improve-plan"
-  short_description: "개선 과제를 분석해 우선순위와 계획 문서를 만드는 스킬"
-  default_prompt: "Use $ct-improve-plan to analyze improvement candidates, prioritize them, and write a {project}_improve_plan.md document."
+  display_name: "개선 계획"
+  short_description: "개선 과제를 분석해 우선순위 문서를 만드는 스킬"
+  default_prompt: "Use $ct-improve-plan to analyze this codebase, prioritize improvement items, and write the {project}_improve_plan.md document."
 policy:
   allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "잡스형"
+  short_description: "기획서부터 화면 설계까지 end-to-end로 진행"
+  default_prompt: "Use $pd to turn this product idea or requirement into a concrete plan, user flow, and screen design direction."
+policy:
+  allow_implicit_invocation: true

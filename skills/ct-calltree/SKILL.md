@@ -1,21 +1,12 @@
 ---
 name: ct-calltree
-description: Analyze Java controller/service call trees and generate structured call flow documents with final [TC:✅] decisions and compact test-relevant node metadata. Use when Codex needs to map Java call relationships, decide which calls deserve test coverage, and collect helper data for later test work without turning this skill into a prerequisite contract provider for ct-calltree-test.
+description: Java 파일 호출 관계(Call Tree) 분석
 ---
 
 # Java Call Tree 분석
 
 Java 파일(Controller/Service)의 메서드 호출 관계를 분석하여 Call Tree를 생성한다.
-`[TC:✅]` 대상 여부를 최종 판정하는 것이 이 스킬의 핵심 목적이다.
-
-이 스킬은 독립적으로 분석 문서를 만든다.
-문서에 담는 `family`, `bundle`, `branchType`, `priority`는 테스트에 도움이 되는
-참고 데이터이며, `ct-calltree-test`를 위한 사전 계약이 아니다.
-
-## 추가 참조
-
-- `templates/calltree-output-template.md`
-  - 문서 뼈대 템플릿. `[TC:✅] 노드 요약` 형식을 포함한다.
+`[TC:✅]` 대상 여부를 최종 판정하는 것이 이 커맨드의 핵심 목적이다.
 
 ## 분석 방식
 
@@ -76,15 +67,15 @@ Java 파일(Controller/Service)의 메서드 호출 관계를 분석하여 Call 
 - private helper라도 분기, DTO 조립, service 호출 제어를 담당하는 경우
 
 ### 비대상 (미표기)
-아래에 모두 해당하면 제외:
+아래에 **모두** 해당하면 제외:
 - 내부 로직 없이 mapper/dao/service를 즉시 호출하고 반환
 - 조건 분기, 데이터 변환/후처리, 예외 처리, 부수효과 없음
 
 ### 보정 규칙
-1. 메서드 본문 기준으로 판단한다. 호출자의 분기가 복잡해도 target 메서드 본문이 단순 위임이면 비대상일 수 있다.
-2. 외부 조건과 내부 조건을 분리한다. 외부 조건이 복잡해도 본문이 단순하면 `[TC:✅]`는 상위 노드에 준다.
-3. 단순 조회라도 후처리가 있으면 대상이다. DAO 1회 호출이어도 결과를 분해/매핑/정규화하면 대상이다.
-4. 애매하면 한 단계 더 추적한다. 호출자/피호출자를 한 단계 더 보고 판단한다.
+1. **메서드 본문 기준으로 판단한다** — 호출자의 분기가 복잡해도 target 메서드 본문이 단순 위임이면 비대상일 수 있다.
+2. **외부 조건과 내부 조건을 분리한다** — 외부 조건(호출 여부를 결정하는 상위 분기)이 복잡해도 본문이 단순하면 `[TC:✅]`는 상위 노드에 준다.
+3. **단순 조회라도 후처리가 있으면 대상이다** — DAO 1회 호출이어도 결과를 분해/매핑/정규화하면 대상.
+4. **애매하면 한 단계 더 추적한다** — 호출자/피호출자를 한 단계 더 보고 판단한다.
 
 ### 판정 체크리스트
 1. 메서드 본문 안에 조건 분기/반복/예외 처리/외부연동/후처리가 있는가
@@ -114,10 +105,9 @@ Java 파일(Controller/Service)의 메서드 호출 관계를 분석하여 Call 
 7. 출력 파일 생성 (기존 파일이 있어도 전체를 새로 작성)
 8. 초안 완료 후 기존 CallTree 문서가 있으면 누락/범위 차이만 점검
 
-## `[TC:✅] 노드 요약` 작성 규칙
+## [TC:✅] 노드 요약 작성 규칙
 
 `[TC:✅]` 노드를 행 단위로 정리하는 분석 요약 표다.
-이 표는 테스트 스킬이 참고할 수 있는 보조 데이터이지만, 테스트 생성 계약 자체는 아니다.
 
 | 필드 | 설명 |
 |------|------|
@@ -131,7 +121,7 @@ Java 파일(Controller/Service)의 메서드 호출 관계를 분석하여 Call 
 
 ### branchType 작성 기준
 
-branchType은 호출자(caller) 관점에서 관찰되는 호출 조건만 기재한다.
+branchType은 **호출자(caller) 관점에서 관찰되는 호출 조건**만 기재한다.
 대상 메서드 내부의 서비스 로직 분기는 기재하지 않는다.
 
 | 기재 대상 (호출자 관점) | 예시 |
@@ -171,8 +161,46 @@ branchType은 호출자(caller) 관점에서 관찰되는 호출 조건만 기�
 
 ## 출력 템플릿
 
-`templates/calltree-output-template.md`를 기본 뼈대로 사용한다.
-템플릿을 그대로 복사하지 말고, 실제 분석 결과로 채운다.
+```markdown
+# {ClassName} 호출 흐름
+
+## 문서 정보
+- 대상 클래스: `{ClassName}`
+- 소스: `{source-path}`
+- 필터: `{filter-or-none}`
+- 포함 메서드: `{method-list}`
+- 작성 시각: `{timestamp}`
+- 기준: 메서드 본문 기준으로 `[TC:✅]` 판정
+
+## 흐름 요약
+- `{entry-method-1}`
+  `{summary}`
+
+## 메서드별 호출 트리
+
+### 1. `{entry-method}`
+
+```text
+[TC:✅] {entry-method}()
+├─ ...
+```
+
+## [TC:✅] 노드 요약
+| nodeId | callNode | layer | family | bundle | branchType | priority |
+|---|---|---|---|---|---|---|
+| N01 | `{callNode}` | `{layer}` | `{family}` | `{bundle}` | `{branchType}` | `{priority}` |
+
+## `[TC:✅]`로 본 메서드
+- `{callNode}`
+  `{why-target}`
+
+## 비대상으로 둔 메서드
+- `{callNode}`
+  `{why-not-target}`
+
+## 특이사항
+- `{note}`
+```
 
 ## 서식 규칙
 - A4 세로 인쇄 기준으로 가로 폭이 과하지 않게 정리한다.

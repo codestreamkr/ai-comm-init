@@ -1,4 +1,6 @@
 interface:
-  display_name: "spring"
-  short_description: "프로젝트 구조를 먼저 파악하고 Spring 작업을 조율"
-  default_prompt: "Use $spring to inspect the project first, follow the existing Spring conventions, and read only the topic-specific references needed for JPA, Security, Cloud, Batch, MVC, or testing."
+  display_name: "로드형"
+  short_description: "프로젝트 컨벤션을 맞춰 Spring 작업을 정리"
+  default_prompt: "Use $spring to inspect the project conventions first and handle this Spring task in the repository's existing style."
+policy:
+  allow_implicit_invocation: true

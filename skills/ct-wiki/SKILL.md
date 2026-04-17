@@ -1,6 +1,6 @@
 ---
 name: ct-wiki
-description: Generate or convert technical Confluence wiki documents with a strict table-first template.
+description: Confluence Wiki 최적화 문서 생성 및 변환
 ---
 
 # Confluence Wiki 문서 생성/변환
