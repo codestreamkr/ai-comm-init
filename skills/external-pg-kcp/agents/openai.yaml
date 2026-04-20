@@ -1,0 +1,6 @@
+interface:
+  display_name: "그레고르형 KCP"
+  short_description: "KCP 기존 연동을 해석하고 토스 전환 매핑을 만든다"
+  default_prompt: "Use $external-pg-kcp to analyze an existing KCP integration, identify vendor-specific behavior, and prepare concrete migration mappings to Toss Payments."
+policy:
+  allow_implicit_invocation: true
