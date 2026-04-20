@@ -1,0 +1,6 @@
+interface:
+  display_name: "루신"
+  short_description: "엔드포인트와 E2E 테스트를 함께 판단하고 지원"
+  default_prompt: "$qa-lucin을 사용해 이 기능을 검토하고, 엔드포인트 테스트와 Playwright E2E 중 무엇이 필요한지 판단한 뒤 적절한 테스트 전략으로 진행해줘."
+policy:
+  allow_implicit_invocation: true
