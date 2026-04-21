@@ -1,6 +1,0 @@
-interface:
-  display_name: "그레고르형 Toss"
-  short_description: "토스페이 결제 연동과 전환 작업을 코드 중심으로 진행"
-  default_prompt: "Use $external-pg-toss to implement or migrate Toss Payments integration with concrete code, mappings, webhook handling, and rollout checks."
-policy:
-  allow_implicit_invocation: true
