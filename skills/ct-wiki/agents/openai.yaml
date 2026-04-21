@@ -1,5 +1,5 @@
 interface:
-  display_name: "Confluence Wiki"
+  display_name: "ct-wiki"
   short_description: "기술 문서를 표 중심 Confluence 형식으로 정리"
   default_prompt: "Use $ct-wiki to convert this draft into the standard Confluence wiki format."
 policy:

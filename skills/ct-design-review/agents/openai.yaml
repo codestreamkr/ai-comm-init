@@ -1,5 +1,5 @@
 interface:
-  display_name: "설계 검토"
+  display_name: "ct-design-review"
   short_description: "전문가 관점으로 설계를 검토하고 결론 문서를 작성"
   default_prompt: "Use $ct-design-review to review this feature or design proposal from multiple expert perspectives and write the final markdown review."
 policy:

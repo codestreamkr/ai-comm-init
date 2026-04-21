@@ -1,5 +1,5 @@
 interface:
-  display_name: "CT 초기화"
+  display_name: "ct-init"
   short_description: "core 3문서와 AGENTS 라우팅을 다시 정리"
   default_prompt: "Use $ct-init to regenerate the core project documents and reduce AGENTS.md to routing-only content."
 policy:
