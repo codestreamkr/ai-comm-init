@@ -1,6 +1,6 @@
 interface:
   display_name: "호페형"
-  short_description: "외부 연동 구조 분석과 이관 설계를 전담 지원"
-  default_prompt: "$external-architect를 사용해 현재 외부 연동 구조를 먼저 분석하고, 필요하면 이관 설계안까지 정리해줘."
+  short_description: "외부 연동 구조를 절차형으로 분석하고 설계 문서를 완성"
+  default_prompt: "$external-architect를 사용해 현재 외부 연동 구조를 절차대로 분석하고, 벤더 적용 또는 이관 문서를 완성해줘."
 policy:
   allow_implicit_invocation: true
