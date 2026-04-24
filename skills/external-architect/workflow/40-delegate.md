@@ -7,11 +7,8 @@
 1. `agents/agent-developer.md` 기준으로 developer 작업을 위임한다.
 2. `agents/agent-document.md` 기준으로 document 작업을 같은 응답에서 병렬 위임한다.
 3. 메인 어시스턴트는 두 위임이 모두 시작됐는지 확인한다.
-4. developer 결과와 document 결과를 받은 뒤 메인 어시스턴트가 최종본 1개로 통합한다.
-5. 아키텍트가 현재 구조 리포트와 목표 구조를 먼저 확정한다.
-6. developer와 document에는 아키텍트가 확정한 범위와 구조를 같은 기준으로 전달한다.
-7. developer는 개발 관점의 프레임 정보를 정리한다.
-8. document는 최종 문서 구조와 표현을 정리한다.
+4. 아키텍트가 현재 구조 리포트와 목표 구조를 먼저 확정한다.
+5. developer와 document에는 아키텍트가 확정한 범위와 구조를 같은 기준으로 전달한다.
 
 ## 금지
 
