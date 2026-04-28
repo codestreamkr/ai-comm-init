@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-tran-plan"
+  short_description: "특정 메소드 기준 AS-IS/TO-BE 전환 계획 문서 작성"
+  default_prompt: "Use $ct-tran-plan to write an AS-IS/TO-BE transition plan for a specific method, including current call tree, structural judgment, target call tree, service responsibilities, and method mapping."
+policy:
+  allow_implicit_invocation: true
