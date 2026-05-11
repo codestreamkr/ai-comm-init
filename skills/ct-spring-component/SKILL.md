@@ -21,18 +21,11 @@ description: 사용자가 `ct-spring-component service-log`처럼 Spring 컴포�
 - 허용 호출:
   - `ct-spring-component`
   - `$ct-spring-component`
-  - `ct-spring-component service-log`
-  - `$ct-spring-component service-log`
-  - `ct-spring-component jwt-auth`
-  - `$ct-spring-component jwt-auth`
-  - `ct-spring-component exception-handler`
-  - `$ct-spring-component exception-handler`
-  - `ct-spring-component api-response`
-  - `$ct-spring-component api-response`
-- 미허용 호출:
-  - `Spring 로그 만들어줘`
-  - `ServiceLogAspect 만들어줘`
-  - `스프링컴포넌트 추가해줘`
+  - `ct-spring-component <component-name>`
+  - `$ct-spring-component <component-name>`
+- 허용 component-name: `service-log`, `jwt-auth`, `exception-handler`, `api-response`
+- 컴포넌트 이름 없이 호출하면 목록만 출력하고 중단한다.
+- 명령어 없이 자연어만 있는 요청은 처리하지 않는다.
 
 ## 실행 전 확인
 
