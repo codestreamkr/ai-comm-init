@@ -110,8 +110,6 @@ echo "[3/4] Registering MCP servers..."
 if command -v codex >/dev/null 2>&1; then
     register_stdio_mcp "playwright" npx -y @playwright/mcp@latest
     register_stdio_mcp "context7" npx -y @upstash/context7-mcp
-    register_http_mcp "notion" "https://mcp.notion.com/mcp"
-    register_http_mcp "figma" "https://mcp.figma.com/mcp"
 else
     echo "  skipped (codex not found)"
 fi

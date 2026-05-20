@@ -36,7 +36,7 @@ git clone https://github.com/codestreamkr/chatgpt-codex-init.git /tmp/codex-init
 
 - `AGENTS.md`
 - `skills/`
-- MCP 서버: `playwright`, `context7`, `notion`, `figma`
+- MCP 서버: `playwright`, `context7`
 
 `skills/` 아래 스킬은 `ct-` 네임스페이스를 기준으로 관리한다.
 현재 저장소가 제공하는 스킬도 모두 `ct-*` 이름을 사용한다.

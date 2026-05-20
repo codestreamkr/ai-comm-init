@@ -134,8 +134,6 @@ try {
     if (Get-Command codex -ErrorAction SilentlyContinue) {
         Register-StdioMcp -Name "playwright" -CommandArgs @("npx", "-y", "@playwright/mcp@latest")
         Register-StdioMcp -Name "context7" -CommandArgs @("npx", "-y", "@upstash/context7-mcp")
-        Register-HttpMcp -Name "notion" -Url "https://mcp.notion.com/mcp"
-        Register-HttpMcp -Name "figma" -Url "https://mcp.figma.com/mcp"
     } else {
         Write-Host "  skipped (codex not found)"
     }
