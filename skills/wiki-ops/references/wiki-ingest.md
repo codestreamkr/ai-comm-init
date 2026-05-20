@@ -1,14 +1,14 @@
 # $wiki-ops ingest
 
-`$wiki-ops ingest`는 `raw/` 원문을 읽고 `wiki/` 문서를 갱신한다.
+`$wiki-ops ingest`는 `.wiki/raw/` 원문을 읽고 `.wiki/` 문서를 갱신한다.
 
 ## 대상
 
 하나의 원문을 하나의 처리 단위로 본다.
 
-- `raw/*.md`
-- `raw/*.txt`
-- `raw/assets/*.pdf`
+- `.wiki/raw/*.md`
+- `.wiki/raw/*.txt`
+- `.wiki/raw/assets/*.pdf`
 - 사용자가 지정한 원문 파일
 
 ## 절차
@@ -16,18 +16,19 @@
 기존 위키와 연결하면서 반영한다.
 
 1. 현재 프로젝트의 `AGENTS.md`를 읽는다.
-2. `wiki/index.md`를 읽고 관련 문서를 찾는다.
-3. 지정된 원문을 읽는다.
-4. `wiki/sources/`에 원문별 요약 문서를 만든다.
-5. 관련 개념은 `wiki/concepts/`에 반영한다.
-6. 사람, 조직, 제품, 장소는 `wiki/entities/`에 반영한다.
-7. 여러 자료를 묶은 판단은 `wiki/synthesis/`에 반영한다.
-8. `wiki/index.md`에 새 링크와 한 줄 요약을 추가한다.
-9. `wiki/log.md`에 처리 이력을 추가한다.
+2. 현재 프로젝트의 `LLM-WIKI.md`를 읽는다.
+3. `.wiki/index.md`를 읽고 관련 문서를 찾는다.
+4. 지정된 원문을 읽는다.
+5. `.wiki/sources/`에 원문별 요약 문서를 만든다.
+6. 관련 개념은 `.wiki/concepts/`에 반영한다.
+7. 사람, 조직, 제품, 장소는 `.wiki/entities/`에 반영한다.
+8. 여러 자료를 묶은 판단은 `.wiki/synthesis/`에 반영한다.
+9. `.wiki/index.md`에 새 링크와 한 줄 요약을 추가한다.
+10. `.wiki/log.md`에 처리 이력을 추가한다.
 
 ## 원문 요약 문서
 
-`wiki/sources/` 문서는 원문 단위로 작성한다.
+`.wiki/sources/` 문서는 원문 단위로 작성한다.
 
 - 제목
 - 한 줄 요약
@@ -52,7 +53,7 @@
 
 근거 중심으로 작성한다.
 
-- `raw/` 원문은 수정하지 않는다.
+- `.wiki/raw/` 원문은 수정하지 않는다.
 - 주요 주장에는 출처 문서를 연결한다.
 - 출처 없는 추론은 `## 해석` 또는 `## 확인 필요`에 둔다.
 - 같은 개념 문서가 있으면 새로 만들지 않고 갱신한다.

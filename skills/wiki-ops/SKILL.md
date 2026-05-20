@@ -2,7 +2,7 @@
 name: wiki-ops
 description: "Use only when the user explicitly invokes `$wiki-ops`. Supported actions after the skill name: init, capture, ingest, search, log, daily, synthesis, verify, lint, prune. Examples: `$wiki-ops init`, `$wiki-ops search OO회의 언제지?`, `$wiki-ops ingest 회의록 정리해줘`, `$wiki-ops log 지난 7일`. Do not trigger without `$wiki-ops`."
 metadata:
-  short-description: Operate raw/wiki Markdown knowledge wikis
+  short-description: Operate Markdown knowledge wikis
 ---
 
 # Wiki Ops
@@ -13,11 +13,13 @@ metadata:
 
 현재 작업 디렉터리를 위키 프로젝트 루트로 본다.
 
-- 프로젝트 규칙은 현재 프로젝트의 `AGENTS.md`를 우선한다.
-- 사람용 안내는 현재 프로젝트의 `README.md`를 참고한다.
-- 원문 자료는 `raw/`에 둔다.
-- LLM이 작성하거나 수정하는 문서는 `wiki/`에 둔다.
-- `raw/` 안의 원문은 수정하지 않는다.
+- 프로젝트 공통 규칙은 현재 프로젝트의 `AGENTS.md`를 따른다.
+- 위키 운영 규칙은 현재 프로젝트의 `LLM-WIKI.md`를 따른다.
+- `LLM-WIKI.md`가 없으면 `$wiki-ops init`으로 생성한다.
+- `README.md`는 `$wiki-ops`가 생성하거나 수정하지 않는다.
+- 원문 자료는 `.wiki/raw/`에 둔다.
+- LLM이 작성하거나 수정하는 문서는 `.wiki/raw/`를 제외한 `.wiki/` 하위에 둔다.
+- `.wiki/raw/` 안의 원문은 수정하지 않는다.
 - 문서 본문에는 최종본만 남긴다.
 - 변경 이력은 문서 맨 끝 `## 이력관리`에만 남긴다.
 
@@ -49,15 +51,17 @@ metadata:
 - `$wiki-ops search OO회의 언제지?`: 적용한다.
 - `$wiki-ops ingest 회의록 정리해줘`: 적용한다.
 - `$wiki-ops log 1주일간 정리된 내용 알려줘`: 적용한다.
-- `$wiki-ops verify wiki/index.md`: 적용한다.
+- `$wiki-ops verify .wiki/index.md`: 적용한다.
 
 ## 공통 절차
 
 작업 전 프로젝트 상태를 확인한다.
 
 - `AGENTS.md`가 있으면 먼저 읽는다.
-- `wiki/index.md`가 있으면 관련 문서 탐색의 출발점으로 쓴다.
-- `wiki/log.md`가 있으면 작업 이력과 최근 변경 흐름을 확인한다.
+- `LLM-WIKI.md`가 있으면 위키 운영 기준으로 읽는다.
+- `AGENTS.md`와 `LLM-WIKI.md`의 내용을 새 문서에 복사하지 않는다.
+- `.wiki/index.md`가 있으면 관련 문서 탐색의 출발점으로 쓴다.
+- `.wiki/log.md`가 있으면 작업 이력과 최근 변경 흐름을 확인한다.
 - 독립적인 조회와 검증은 병렬로 실행한다.
 - 파일 수정 전에는 어떤 파일을 왜 수정하는지 짧게 알린다.
 

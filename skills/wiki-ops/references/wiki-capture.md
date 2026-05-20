@@ -1,6 +1,6 @@
 # $wiki-ops capture
 
-`$wiki-ops capture`는 원문 자료를 `raw/`에 저장한다.
+`$wiki-ops capture`는 원문 자료를 `.wiki/raw/`에 저장한다.
 
 ## 대상
 
@@ -18,8 +18,8 @@
 
 자료 유형에 따라 저장 위치를 나눈다.
 
-- 텍스트 원문: `raw/YYYY-MM-DD_slug.md`
-- 첨부 파일: `raw/assets/YYYY-MM-DD_slug.ext`
+- 텍스트 원문: `.wiki/raw/YYYY-MM-DD_slug.md`
+- 첨부 파일: `.wiki/raw/assets/YYYY-MM-DD_slug.ext`
 - 여러 출처: 출처별로 파일 분리
 
 ## 원문 파일 형식
@@ -47,7 +47,7 @@
 원문은 추적 가능해야 한다.
 
 - 가능한 한 원문 전체를 보존한다.
-- 임의 요약은 `raw/`가 아니라 `wiki/`에 둔다.
+- 임의 요약은 `.wiki/raw/`가 아니라 `.wiki/`에 둔다.
 - 출처가 없으면 `출처: 확인 필요`로 표시한다.
 - 웹 자료는 URL과 확인일을 남긴다.
 - 원문을 수집한 뒤 바로 ingest하지 않는다. 사용자가 요청했거나 자연스러운 다음 단계일 때만 제안한다.

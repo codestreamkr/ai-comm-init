@@ -15,12 +15,12 @@
 
 근거 문서를 먼저 모은다.
 
-1. `wiki/index.md`에서 관련 문서를 찾는다.
-2. 관련 `wiki/sources/`, `wiki/concepts/`, `wiki/entities/` 문서를 읽는다.
+1. `.wiki/index.md`에서 관련 문서를 찾는다.
+2. 관련 `.wiki/sources/`, `.wiki/concepts/`, `.wiki/entities/` 문서를 읽는다.
 3. 공통 주장과 차이를 분리한다.
 4. 충돌 내용은 별도 항목으로 둔다.
-5. `wiki/synthesis/`에 종합 문서를 작성하거나 갱신한다.
-6. `wiki/index.md`와 `wiki/log.md`를 갱신한다.
+5. `.wiki/synthesis/`에 종합 문서를 작성하거나 갱신한다.
+6. `.wiki/index.md`와 `.wiki/log.md`를 갱신한다.
 
 ## 문서 구성
 
@@ -40,7 +40,7 @@
 
 종합 문서는 원문 요약을 대체하지 않는다.
 
-- 원문별 상세 내용은 `wiki/sources/`에 남긴다.
+- 원문별 상세 내용은 `.wiki/sources/`에 남긴다.
 - 종합 문서에는 판단에 필요한 내용만 남긴다.
 - 출처가 없는 판단은 `해석`에 둔다.
 
