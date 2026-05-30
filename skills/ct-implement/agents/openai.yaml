@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-implement"
-  short_description: "구현 범위를 정리하고 연관 영향 수정까지 처리"
-  default_prompt: "Use $ct-implement to assess this implementation request first, then proceed with the approved code changes and related impact updates."
+  short_description: "전파 범위가 큰 구현을 영향 범위까지 함께 처리"
+  default_prompt: "Use $ct-implement only when this implementation affects APIs, data contracts, processing flows, multiple files, or requires related impact updates."
 policy:
   allow_implicit_invocation: true
