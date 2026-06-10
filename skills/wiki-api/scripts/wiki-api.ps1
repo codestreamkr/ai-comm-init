@@ -1,16 +1,20 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("check-env", "search", "smart-search", "get-page", "save-page", "update-page")]
+    [ValidateSet("help", "check-env", "search", "smart-search", "get-page", "get-comments", "get-attachments", "get-child-pages", "get-descendant-pages", "get-labels", "get-history", "get-restrictions", "get-page-bundle", "save-page", "save-comments", "create-page", "update-page")]
     [string]$Command,
 
     [string]$Cql,
     [string]$Query,
     [string]$PageId,
+    [string]$ParentId,
     [string]$Space,
     [string]$Title,
     [string]$BodyFile,
     [string]$OutDir,
+    [int]$Start = 0,
+    [int]$Limit = 25,
+    [string]$Expand,
     [string]$Representation = "storage",
     [ValidateSet("", "bearer", "basic")]
     [string]$AuthTypeOverride = "",
@@ -296,11 +300,117 @@ function New-WikiSearchCql {
     return Join-WikiCql $parts
 }
 
-function Invoke-WikiSearch {
-    param([Parameter(Mandatory = $true)][string]$SearchCql)
+function New-WikiQueryString {
+    param([Parameter(Mandatory = $true)][System.Collections.IDictionary]$Params)
 
-    $encodedCql = ConvertTo-QueryValue $SearchCql
-    return Invoke-WikiApi -Method "GET" -Path "/content/search?cql=$encodedCql&expand=space,version"
+    $parts = @()
+    foreach ($key in $Params.Keys) {
+        $value = $Params[$key]
+        if ($null -eq $value -or [string]::IsNullOrWhiteSpace([string]$value)) {
+            continue
+        }
+
+        $parts += ((ConvertTo-QueryValue ([string]$key)) + "=" + (ConvertTo-QueryValue ([string]$value)))
+    }
+
+    if ($parts.Count -eq 0) {
+        return ""
+    }
+
+    return "?" + ($parts -join "&")
+}
+
+function Invoke-WikiSearch {
+    param(
+        [Parameter(Mandatory = $true)][string]$SearchCql,
+        [string]$ExpandValue = "space,version",
+        [int]$StartIndex = 0,
+        [int]$PageLimit = 25
+    )
+
+    if ($StartIndex -lt 0) {
+        throw "Start must be 0 or greater."
+    }
+    if ($PageLimit -lt 1) {
+        throw "Limit must be 1 or greater."
+    }
+
+    $query = New-WikiQueryString ([ordered]@{
+        cql = $SearchCql
+        expand = $ExpandValue
+        start = $StartIndex
+        limit = $PageLimit
+    })
+    return Invoke-WikiApi -Method "GET" -Path "/content/search$query"
+}
+
+function Invoke-WikiContentCollection {
+    param(
+        [Parameter(Mandatory = $true)][string]$ContentId,
+        [Parameter(Mandatory = $true)][string]$RelativePath,
+        [string]$ExpandValue,
+        [int]$StartIndex = 0,
+        [int]$PageLimit = 25
+    )
+
+    if ($StartIndex -lt 0) {
+        throw "Start must be 0 or greater."
+    }
+    if ($PageLimit -lt 1) {
+        throw "Limit must be 1 or greater."
+    }
+
+    $query = New-WikiQueryString ([ordered]@{
+        expand = $ExpandValue
+        start = $StartIndex
+        limit = $PageLimit
+    })
+    return Invoke-WikiApi -Method "GET" -Path "/content/$ContentId/$RelativePath$query"
+}
+
+function Invoke-WikiOptionalSection {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Action
+    )
+
+    try {
+        return & $Action
+    }
+    catch {
+        return [pscustomobject]@{
+            error = $_.Exception.Message
+        }
+    }
+}
+
+function Get-WikiHelp {
+    [pscustomobject]@{
+        commands = @(
+            [pscustomobject]@{ name = "check-env"; description = "환경변수 설정 여부 확인" },
+            [pscustomobject]@{ name = "search"; description = "CQL 직접 검색"; required = "-Cql"; optional = "-Start -Limit -Expand" },
+            [pscustomobject]@{ name = "smart-search"; description = "page id, URL, 제목, 본문 순서의 스마트 검색"; required = "-Query"; optional = "-Space" },
+            [pscustomobject]@{ name = "get-page"; description = "페이지 본문, 버전, Space 조회"; required = "-PageId" },
+            [pscustomobject]@{ name = "get-comments"; description = "페이지 코멘트 조회"; required = "-PageId"; optional = "-Start -Limit -Expand" },
+            [pscustomobject]@{ name = "get-attachments"; description = "페이지 첨부파일 조회"; required = "-PageId"; optional = "-Start -Limit -Expand" },
+            [pscustomobject]@{ name = "get-child-pages"; description = "직접 하위 페이지 조회"; required = "-PageId"; optional = "-Start -Limit -Expand" },
+            [pscustomobject]@{ name = "get-descendant-pages"; description = "CQL ancestor 조건으로 전체 하위 페이지 조회"; required = "-PageId"; optional = "-Start -Limit -Expand" },
+            [pscustomobject]@{ name = "get-labels"; description = "페이지 라벨 조회"; required = "-PageId"; optional = "-Start -Limit" },
+            [pscustomobject]@{ name = "get-history"; description = "페이지 히스토리 조회"; required = "-PageId"; optional = "-Expand" },
+            [pscustomobject]@{ name = "get-restrictions"; description = "페이지 제한 정보 조회"; required = "-PageId"; optional = "-Expand" },
+            [pscustomobject]@{ name = "get-page-bundle"; description = "페이지, 코멘트, 첨부, 하위 페이지, 라벨, 히스토리, 제한 정보 묶음 조회"; required = "-PageId"; optional = "-Start -Limit" },
+            [pscustomobject]@{ name = "save-page"; description = "페이지 원문 JSON 저장"; required = "-PageId"; optional = "-OutDir" },
+            [pscustomobject]@{ name = "save-comments"; description = "페이지 코멘트 JSON 저장"; required = "-PageId"; optional = "-OutDir -Start -Limit -Expand" },
+            [pscustomobject]@{ name = "create-page"; description = "페이지 생성 dry-run 또는 실제 생성"; required = "-Title -BodyFile"; optional = "-ParentId -Space -Representation -Write" },
+            [pscustomobject]@{ name = "update-page"; description = "페이지 수정 dry-run 또는 실제 반영"; required = "-PageId -BodyFile"; optional = "-Title -Representation -Write" }
+        )
+        examples = @(
+            "wiki-api.ps1 get-comments -PageId 231796715",
+            "wiki-api.ps1 get-attachments -PageId 231796715",
+            "wiki-api.ps1 get-page-bundle -PageId 231796715",
+            "wiki-api.ps1 save-comments -PageId 231796715",
+            "wiki-api.ps1 create-page -ParentId 349474638 -Title '직영몰 PG 고도화 최종 결정 요약' -BodyFile .\\work\\page-body.html -Write"
+        )
+    }
 }
 
 function Invoke-WikiSmartSearch {
@@ -395,6 +505,10 @@ function Save-JsonFile {
 
 try {
     switch ($Command) {
+        "help" {
+            Get-WikiHelp | ConvertTo-Json -Depth 10
+        }
+
         "check-env" {
             Test-WikiEnv | ConvertTo-Json -Depth 5
         }
@@ -404,7 +518,12 @@ try {
                 throw "Cql is required for search."
             }
 
-            $result = Invoke-WikiSearch -SearchCql $Cql
+            $expandValue = $Expand
+            if ([string]::IsNullOrWhiteSpace($expandValue)) {
+                $expandValue = "space,version"
+            }
+
+            $result = Invoke-WikiSearch -SearchCql $Cql -ExpandValue $expandValue -StartIndex $Start -PageLimit $Limit
             $result | ConvertTo-Json -Depth 20
         }
 
@@ -426,6 +545,135 @@ try {
             $result | ConvertTo-Json -Depth 50
         }
 
+        "get-comments" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-comments."
+            }
+
+            $expandValue = $Expand
+            if ([string]::IsNullOrWhiteSpace($expandValue)) {
+                $expandValue = "body.storage,version,container,extensions"
+            }
+
+            $result = Invoke-WikiContentCollection -ContentId $PageId -RelativePath "child/comment" -ExpandValue $expandValue -StartIndex $Start -PageLimit $Limit
+            $result | ConvertTo-Json -Depth 50
+        }
+
+        "get-attachments" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-attachments."
+            }
+
+            $expandValue = $Expand
+            if ([string]::IsNullOrWhiteSpace($expandValue)) {
+                $expandValue = "version,container"
+            }
+
+            $result = Invoke-WikiContentCollection -ContentId $PageId -RelativePath "child/attachment" -ExpandValue $expandValue -StartIndex $Start -PageLimit $Limit
+            $result | ConvertTo-Json -Depth 50
+        }
+
+        "get-child-pages" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-child-pages."
+            }
+
+            $expandValue = $Expand
+            if ([string]::IsNullOrWhiteSpace($expandValue)) {
+                $expandValue = "space,version"
+            }
+
+            $result = Invoke-WikiContentCollection -ContentId $PageId -RelativePath "child/page" -ExpandValue $expandValue -StartIndex $Start -PageLimit $Limit
+            $result | ConvertTo-Json -Depth 50
+        }
+
+        "get-descendant-pages" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-descendant-pages."
+            }
+
+            $expandValue = $Expand
+            if ([string]::IsNullOrWhiteSpace($expandValue)) {
+                $expandValue = "space,version"
+            }
+
+            $result = Invoke-WikiSearch -SearchCql "type = page and ancestor = $PageId" -ExpandValue $expandValue -StartIndex $Start -PageLimit $Limit
+            $result | ConvertTo-Json -Depth 50
+        }
+
+        "get-labels" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-labels."
+            }
+
+            if ($Start -lt 0) {
+                throw "Start must be 0 or greater."
+            }
+            if ($Limit -lt 1) {
+                throw "Limit must be 1 or greater."
+            }
+
+            $query = New-WikiQueryString ([ordered]@{
+                start = $Start
+                limit = $Limit
+            })
+            $result = Invoke-WikiApi -Method "GET" -Path "/content/$PageId/label$query"
+            $result | ConvertTo-Json -Depth 50
+        }
+
+        "get-history" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-history."
+            }
+
+            $expandValue = $Expand
+            if ([string]::IsNullOrWhiteSpace($expandValue)) {
+                $expandValue = "lastUpdated,previousVersion,nextVersion"
+            }
+
+            $query = New-WikiQueryString ([ordered]@{
+                expand = $expandValue
+            })
+            $result = Invoke-WikiApi -Method "GET" -Path "/content/$PageId/history$query"
+            $result | ConvertTo-Json -Depth 50
+        }
+
+        "get-restrictions" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-restrictions."
+            }
+
+            $query = New-WikiQueryString ([ordered]@{
+                expand = $Expand
+            })
+            $result = Invoke-WikiApi -Method "GET" -Path "/content/$PageId/restriction/byOperation$query"
+            $result | ConvertTo-Json -Depth 50
+        }
+
+        "get-page-bundle" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for get-page-bundle."
+            }
+
+            $result = [pscustomobject]@{
+                page = Invoke-WikiOptionalSection { Invoke-WikiApi -Method "GET" -Path "/content/$PageId`?expand=body.storage,version,space" }
+                comments = Invoke-WikiOptionalSection { Invoke-WikiContentCollection -ContentId $PageId -RelativePath "child/comment" -ExpandValue "body.storage,version,container,extensions" -StartIndex $Start -PageLimit $Limit }
+                attachments = Invoke-WikiOptionalSection { Invoke-WikiContentCollection -ContentId $PageId -RelativePath "child/attachment" -ExpandValue "version,container" -StartIndex $Start -PageLimit $Limit }
+                childPages = Invoke-WikiOptionalSection { Invoke-WikiContentCollection -ContentId $PageId -RelativePath "child/page" -ExpandValue "space,version" -StartIndex $Start -PageLimit $Limit }
+                descendantPages = Invoke-WikiOptionalSection { Invoke-WikiSearch -SearchCql "type = page and ancestor = $PageId" -ExpandValue "space,version" -StartIndex $Start -PageLimit $Limit }
+                labels = Invoke-WikiOptionalSection {
+                    $labelQuery = New-WikiQueryString ([ordered]@{
+                        start = $Start
+                        limit = $Limit
+                    })
+                    Invoke-WikiApi -Method "GET" -Path "/content/$PageId/label$labelQuery"
+                }
+                history = Invoke-WikiOptionalSection { Invoke-WikiApi -Method "GET" -Path "/content/$PageId/history?expand=lastUpdated,previousVersion,nextVersion" }
+                restrictions = Invoke-WikiOptionalSection { Invoke-WikiApi -Method "GET" -Path "/content/$PageId/restriction/byOperation" }
+            }
+            $result | ConvertTo-Json -Depth 50
+        }
+
         "save-page" {
             if ([string]::IsNullOrWhiteSpace($PageId)) {
                 throw "PageId is required for save-page."
@@ -443,6 +691,82 @@ try {
             $path = Join-Path $OutDir "$PageId-$safeTitle.json"
             Save-JsonFile -Value $result -Path $path
             Write-Output "Saved: $path"
+        }
+
+        "save-comments" {
+            if ([string]::IsNullOrWhiteSpace($PageId)) {
+                throw "PageId is required for save-comments."
+            }
+
+            if ([string]::IsNullOrWhiteSpace($OutDir)) {
+                $OutDir = Get-WikiEnv -Name "WIKI_API_RAW_DIR" -FallbackName "CONFLUENCE_RAW_DIR"
+            }
+            if ([string]::IsNullOrWhiteSpace($OutDir)) {
+                $OutDir = ".wiki/raw/wiki-api"
+            }
+
+            $expandValue = $Expand
+            if ([string]::IsNullOrWhiteSpace($expandValue)) {
+                $expandValue = "body.storage,version,container,extensions"
+            }
+
+            $result = Invoke-WikiContentCollection -ContentId $PageId -RelativePath "child/comment" -ExpandValue $expandValue -StartIndex $Start -PageLimit $Limit
+            $path = Join-Path $OutDir "$PageId-comments.json"
+            Save-JsonFile -Value $result -Path $path
+            Write-Output "Saved: $path"
+        }
+
+        "create-page" {
+            if ([string]::IsNullOrWhiteSpace($Title)) {
+                throw "Title is required for create-page."
+            }
+            if ([string]::IsNullOrWhiteSpace($BodyFile)) {
+                throw "BodyFile is required for create-page."
+            }
+            if (-not (Test-Path -LiteralPath $BodyFile)) {
+                throw "BodyFile does not exist: $BodyFile"
+            }
+
+            $spaceKey = $Space
+            $ancestors = @()
+            if (-not [string]::IsNullOrWhiteSpace($ParentId)) {
+                $parent = Invoke-WikiApi -Method "GET" -Path "/content/$ParentId`?expand=space"
+                $ancestors += @{ id = $ParentId }
+                if ([string]::IsNullOrWhiteSpace($spaceKey)) {
+                    $spaceKey = $parent.space.key
+                }
+            }
+
+            if ([string]::IsNullOrWhiteSpace($spaceKey)) {
+                throw "Space is required for create-page when ParentId is not provided."
+            }
+
+            $payload = @{
+                type = "page"
+                title = $Title
+                space = @{
+                    key = $spaceKey
+                }
+                body = @{
+                    storage = @{
+                        value = Get-Content -Raw -LiteralPath $BodyFile
+                        representation = $Representation
+                    }
+                }
+            }
+
+            if ($ancestors.Count -gt 0) {
+                $payload["ancestors"] = $ancestors
+            }
+
+            if (-not $Write) {
+                Write-Output "Dry-run only. Add -Write to create the page."
+                $payload | ConvertTo-Json -Depth 20
+                return
+            }
+
+            $result = Invoke-WikiApi -Method "POST" -Path "/content" -Body $payload
+            $result | ConvertTo-Json -Depth 20
         }
 
         "update-page" {

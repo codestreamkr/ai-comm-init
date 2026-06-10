@@ -49,6 +49,35 @@ description: "환경변수 기반 Wiki API 작업을 수행한다. Confluence RE
 - `wiki-api.ps1`은 프록시 환경변수를 호출 프로세스에서만 제거한다.
 - 직접 `Invoke-RestMethod` 일회성 코드를 작성하지 않는다.
 
+## 사용 가능 명령
+
+명령은 `wiki-api.ps1`의 `Command` 값으로 실행한다.
+
+- `help`: 사용 가능 명령과 예시를 조회한다.
+- `check-env`: 환경변수 설정 여부를 확인한다.
+- `search`: CQL을 직접 실행한다.
+- `smart-search`: page id, URL, 제목, 본문 순서로 검색한다.
+- `get-page`: 페이지 본문, 버전, Space를 조회한다.
+- `get-comments`: 페이지 코멘트를 조회한다.
+- `get-attachments`: 페이지 첨부파일을 조회한다.
+- `get-child-pages`: 직접 하위 페이지를 조회한다.
+- `get-descendant-pages`: CQL `ancestor` 조건으로 전체 하위 페이지를 조회한다.
+- `get-labels`: 페이지 라벨을 조회한다.
+- `get-history`: 페이지 히스토리를 조회한다.
+- `get-restrictions`: 페이지 제한 정보를 조회한다.
+- `get-page-bundle`: 페이지와 관련 정보를 묶어 조회한다.
+- `save-page`: 페이지 원문 JSON을 저장한다.
+- `save-comments`: 페이지 코멘트 JSON을 저장한다.
+- `create-page`: 페이지 생성을 dry-run 또는 실제 반영으로 실행한다.
+- `update-page`: 페이지 수정을 dry-run 또는 실제 반영으로 실행한다.
+
+조회 범위는 공통 옵션으로 조절한다.
+
+- `-Start`: 목록 조회 시작 위치
+- `-Limit`: 목록 조회 건수
+- `-Expand`: Confluence `expand` 값 직접 지정
+- `-OutDir`: 저장 위치 직접 지정
+
 ## 인증 기준
 
 인증은 basic token 방식을 기준으로 처리한다.
@@ -177,12 +206,46 @@ Space를 사용자가 명시한 경우에만 `-Space`를 붙인다.
 & 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-page -PageId 123456
 ```
 
+페이지 관련 정보도 page id를 기준으로 조회한다.
+
+```powershell
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-comments -PageId 123456
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-attachments -PageId 123456
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-child-pages -PageId 123456
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-descendant-pages -PageId 123456
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-labels -PageId 123456
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-history -PageId 123456
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-restrictions -PageId 123456
+```
+
+페이지와 관련 정보를 한 번에 확인할 때는 묶음 조회를 사용한다.
+
+```powershell
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-page-bundle -PageId 123456
+```
+
 ## 저장 절차
 
 원문 저장은 `WIKI_API_RAW_DIR`에 JSON으로 저장한다.
 
 ```powershell
 & 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' save-page -PageId 123456
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' save-comments -PageId 123456
+```
+
+## 생성 절차
+
+페이지 생성은 dry-run을 먼저 실행한다.
+
+- `-ParentId`가 있으면 부모 페이지의 Space를 자동으로 사용한다.
+- `-ParentId` 없이 생성할 때는 `-Space`를 지정한다.
+- 새 본문 파일을 기준으로 payload를 만든다.
+- `-Write`가 없으면 실제 생성하지 않는다.
+- 사용자가 실제 생성을 명시하면 `-Write`를 붙인다.
+
+```powershell
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' create-page -ParentId 123456 -Title '새 페이지 제목' -BodyFile .\work\page-body.html
+& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' create-page -ParentId 123456 -Title '새 페이지 제목' -BodyFile .\work\page-body.html -Write
 ```
 
 ## 수정 절차
@@ -210,4 +273,4 @@ Space를 사용자가 명시한 경우에만 `-Space`를 붙인다.
 
 ## 이력관리
 
-- 2026-06-09: 스킬 폴더의 `wiki-api.ps1`을 직접 실행하고, env 누락 시 설정 안내로 전환하도록 실행 기준 정리. 새 세션에서도 첫 호출에 성공하도록 basic token 인증 기준과 승인 네트워크 실행 기준 추가. 환경변수 확인을 `check-env` 전용 명령으로 고정. 입력값을 page id, URL, 제목, 키워드로 판별하고 특수문자 제거 제목 검색, 토큰 AND 검색, 본문 완화 검색 순서로 처리하는 스마트 검색 기준 추가
+- 2026-06-09: 스킬 폴더의 `wiki-api.ps1`을 직접 실행하고, env 누락 시 설정 안내로 전환하도록 실행 기준 정리. 새 세션에서도 첫 호출에 성공하도록 basic token 인증 기준과 승인 네트워크 실행 기준 추가. 환경변수 확인을 `check-env` 전용 명령으로 고정. 입력값을 page id, URL, 제목, 키워드로 판별하고 특수문자 제거 제목 검색, 토큰 AND 검색, 본문 완화 검색 순서로 처리하는 스마트 검색 기준 추가. `help`, 코멘트, 첨부, 하위 페이지, descendant 페이지, 라벨, 히스토리, 제한 정보, 페이지 묶음 조회, 코멘트 저장 명령 추가. `create-page` 명령과 페이지 생성 절차 추가
