@@ -125,10 +125,10 @@ Generic은 판단 근거를 숨기지 않는다.
 - 책임 범위(정본): 저장소 목적, 디렉터리 구조, 산출물, 주요 도구, 변경 영향의 최종 기준
 - 포함 범위: 저장소 유형, 주요 산출물, 디렉터리 구조, 도구/스크립트, 외부 의존성, 변경 체크포인트
 - 제외 범위: 실행 명령 상세, 세부 작성 규칙
-- 연계 문서: `.project/core_code_style.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_code_style.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 실행/검증 명령은 `.project/core_workflow.md`에만 기록한다.
-  - 문서/설정/스크립트 작성 규칙은 `.project/core_code_style.md`에만 기록한다.
+  - 실행/검증 명령은 `.docs/core_workflow.md`에만 기록한다.
+  - 문서/설정/스크립트 작성 규칙은 `.docs/core_code_style.md`에만 기록한다.
   - 본 문서에는 구조와 산출물 중심으로 기록한다.
 - 근거 소스: {EVIDENCE_SOURCES}
 
@@ -189,10 +189,10 @@ Generic은 판단 근거를 숨기지 않는다.
 - 책임 범위(정본): 파일명, 문서 구조, 설정 형식, 스크립트 스타일, 데이터 형식의 최종 기준
 - 포함 범위: Markdown, YAML/JSON/TOML, shell/PowerShell, 템플릿, 데이터 파일 작성 기준
 - 제외 범위: 실행 절차, 저장소 전체 구조 설명
-- 연계 문서: `.project/core_project.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 구조와 산출물 설명은 `.project/core_project.md`에만 기록한다.
-  - 실행 명령과 검증 절차는 `.project/core_workflow.md`에만 기록한다.
+  - 구조와 산출물 설명은 `.docs/core_project.md`에만 기록한다.
+  - 실행 명령과 검증 절차는 `.docs/core_workflow.md`에만 기록한다.
 
 ## 파일/디렉터리 네이밍
 {FILE_NAMING_RULES}
@@ -231,10 +231,10 @@ Generic은 판단 근거를 숨기지 않는다.
 - 책임 범위(정본): 명령, 도구 버전, 검증, 생성 산출물, 실패 대응의 최종 기준
 - 포함 범위: 초기 설정, 주요 명령, 검증 절차, 자동화, 배포/산출물, 장애 대응
 - 제외 범위: 구조 설명, 작성 스타일
-- 연계 문서: `.project/core_project.md`, `.project/core_code_style.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_code_style.md`
 - 중복 방지 기준:
-  - 구조와 산출물 설명은 `.project/core_project.md`에만 기록한다.
-  - 작성 규칙은 `.project/core_code_style.md`에만 기록한다.
+  - 구조와 산출물 설명은 `.docs/core_project.md`에만 기록한다.
+  - 작성 규칙은 `.docs/core_code_style.md`에만 기록한다.
 
 ## 도구 버전
 | 도구 | 버전 | 근거 | 확인 필요 |

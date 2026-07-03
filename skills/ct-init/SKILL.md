@@ -10,9 +10,9 @@ description: "저장소 초기화(init) 직후 프로젝트 언어와 런타임�
 프로젝트 기준 문서 3종을 언어별 표준에 맞게 만든다.
 
 - 생성 대상:
-  - `.project/core_project.md`
-  - `.project/core_code_style.md`
-  - `.project/core_workflow.md`
+  - `.docs/core_project.md`
+  - `.docs/core_code_style.md`
+  - `.docs/core_workflow.md`
 - `AGENTS.md`는 라우팅 전용으로 유지한다.
 - 상세 구조, 스타일, 실행 절차는 `core_*` 3종으로 분리한다.
 
@@ -21,7 +21,7 @@ description: "저장소 초기화(init) 직후 프로젝트 언어와 런타임�
 저장소 초기 기준 문서가 필요할 때 사용한다.
 
 - 새 저장소를 세팅한 직후
-- `.project` 문서가 없거나 초기 상태로 재생성해야 할 때
+- `.docs` 문서가 없거나 초기 상태로 재생성해야 할 때
 - `AGENTS.md`가 비대해져 상세를 `core_*` 문서로 분리하려고 할 때
 
 ## 실행 방식
@@ -74,7 +74,7 @@ description: "저장소 초기화(init) 직후 프로젝트 언어와 런타임�
   - `README.md` 또는 기존 `AGENTS.md`의 실행 설명
 - 주 런타임이 명확하면 해당 reference를 사용한다.
 - 주 런타임이 불명확하면 `generic`을 사용한다.
-- 판단 근거와 제외한 후보를 `.project/core_project.md`에 남긴다.
+- 판단 근거와 제외한 후보를 `.docs/core_project.md`에 남긴다.
 
 ## 공통 생성 정책
 
@@ -121,7 +121,7 @@ description: "저장소 초기화(init) 직후 프로젝트 언어와 런타임�
 
 구조 문서는 온보딩 기준으로 작성한다.
 
-- `.project/core_project.md`의 `코드베이스 구조`는 최소 3뎁스까지 표현한다.
+- `.docs/core_project.md`의 `코드베이스 구조`는 최소 3뎁스까지 표현한다.
 - 기준은 저장소 루트 상대 경로다.
 - 주요 디렉터리에는 역할 주석을 붙인다.
 - 실제 구조가 3뎁스 미만이면 `최대 N뎁스` 사유를 한 줄로 남긴다.
@@ -149,15 +149,15 @@ description: "저장소 초기화(init) 직후 프로젝트 언어와 런타임�
 
 <!-- ct-init:core-docs:start -->
 ## Core 문서 참조 (ct-init 관리)
-- 프로젝트 구조/모듈 상세: `.project/core_project.md`
-- 코딩 스타일/네이밍 상세: `.project/core_code_style.md`
-- 빌드/테스트/운영 상세: `.project/core_workflow.md`
+- 프로젝트 구조/모듈 상세: `.docs/core_project.md`
+- 코딩 스타일/네이밍 상세: `.docs/core_code_style.md`
+- 빌드/테스트/운영 상세: `.docs/core_workflow.md`
 - AGENTS.md는 라우팅 전용으로 유지하고, 상세 규칙은 위 문서에서 관리한다.
 - 마지막 동기화: {GENERATED_DATE}
 <!-- ct-init:core-docs:end -->
 
 ## 추가 라우팅
-- 빌드/테스트/실행/환경 버전 판단이 필요한 작업은 먼저 `.project/core_workflow.md`를 확인한다.
+- 빌드/테스트/실행/환경 버전 판단이 필요한 작업은 먼저 `.docs/core_workflow.md`를 확인한다.
 
 ## 운영 원칙
 - 본 문서에는 상세 정책을 추가하지 않는다.

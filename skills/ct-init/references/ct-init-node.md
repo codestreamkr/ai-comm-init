@@ -158,10 +158,10 @@ TypeScript 사용 여부와 엄격도는 설정 파일로 판단한다.
 - 책임 범위(정본): 프로젝트 구조, 런타임, 모듈 경계, 데이터 접근, 외부 연동의 최종 기준
 - 포함 범위: 런타임 형태, 엔트리포인트, 코드 구조, 모듈 맵, 데이터/API 접근, 외부 연동, 테스트 진입점
 - 제외 범위: 실행 명령, 패키지 설치 절차, 세부 코딩 규칙
-- 연계 문서: `.project/core_code_style.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_code_style.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 실행 명령과 패키지 매니저 사용법은 `.project/core_workflow.md`에만 기록한다.
-  - 네이밍, TypeScript 타입, 컴포넌트/API 작성 규칙은 `.project/core_code_style.md`에만 기록한다.
+  - 실행 명령과 패키지 매니저 사용법은 `.docs/core_workflow.md`에만 기록한다.
+  - 네이밍, TypeScript 타입, 컴포넌트/API 작성 규칙은 `.docs/core_code_style.md`에만 기록한다.
   - 본 문서에는 구조와 영향 범위만 기록한다.
 - 근거 소스: {EVIDENCE_SOURCES}
 
@@ -237,7 +237,7 @@ flowchart TD
 ## 테스트 진입점
 - 테스트 위치: {TEST_LOCATIONS}
 - 대표 테스트: {KEY_TEST_FILES}
-- 실행 명령은 `.project/core_workflow.md`를 따른다.
+- 실행 명령은 `.docs/core_workflow.md`를 따른다.
 
 ## 변경 시 체크리스트
 1. 런타임 엔트리포인트 변경 여부를 확인한다.
@@ -246,7 +246,7 @@ flowchart TD
 
 ## 유지보수 메모
 - 구조 변경은 이 문서를 먼저 갱신한다.
-- 실행/검증 절차는 `.project/core_workflow.md`에만 기록한다.
+- 실행/검증 절차는 `.docs/core_workflow.md`에만 기록한다.
 ```
 
 ## core_code_style.md 생성 포맷
@@ -261,10 +261,10 @@ flowchart TD
 - 책임 범위(정본): 네이밍, 타입, 모듈 배치, 오류 처리, 로깅, 테스트 작성 스타일의 최종 기준
 - 포함 범위: 파일 네이밍, TypeScript 타입 규칙, 컴포넌트/API/서비스 작성 기준, 오류/로그/테스트 스타일
 - 제외 범위: 실행 명령, 배포 절차, 전체 아키텍처 설명
-- 연계 문서: `.project/core_project.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 구조와 런타임 설명은 `.project/core_project.md`에만 기록한다.
-  - 실행 명령과 환경 변수는 `.project/core_workflow.md`에만 기록한다.
+  - 구조와 런타임 설명은 `.docs/core_project.md`에만 기록한다.
+  - 실행 명령과 환경 변수는 `.docs/core_workflow.md`에만 기록한다.
 
 ## 파일/디렉터리 네이밍
 {FILE_NAMING_RULES}
@@ -319,10 +319,10 @@ flowchart TD
 - 책임 범위(정본): 패키지 매니저, Node.js 버전, scripts, 테스트, 빌드, 배포, 환경 변수의 최종 기준
 - 포함 범위: 설치, 개발 서버, 빌드, 테스트, lint/typecheck, 환경 변수, 배포 산출물
 - 제외 범위: 코드 구조 설명, 세부 구현 스타일
-- 연계 문서: `.project/core_project.md`, `.project/core_code_style.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_code_style.md`
 - 중복 방지 기준:
-  - 구조와 영향 범위는 `.project/core_project.md`에만 기록한다.
-  - 구현 스타일은 `.project/core_code_style.md`에만 기록한다.
+  - 구조와 영향 범위는 `.docs/core_project.md`에만 기록한다.
+  - 구현 스타일은 `.docs/core_code_style.md`에만 기록한다.
 
 ## 버전과 도구
 - Node.js 버전: {NODE_VERSION}

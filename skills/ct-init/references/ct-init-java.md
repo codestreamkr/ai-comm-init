@@ -18,14 +18,14 @@
 ## 목적
 - Java, Spring, MyBatis, Maven/Gradle 프로젝트의 기준 문서 3종을 준비한다.
 - 생성 대상:
-  - `.project/core_project.md`
-  - `.project/core_code_style.md`
-  - `.project/core_workflow.md`
+  - `.docs/core_project.md`
+  - `.docs/core_code_style.md`
+  - `.docs/core_workflow.md`
 - `AGENTS.md`는 라우팅 전용으로 유지하고, 상세 내용은 `core_*` 3종으로 분리한다.
 
 ## 사용 시점
 - 새 저장소를 세팅한 직후
-- `.project` 문서가 없거나 초기 상태로 재생성해야 할 때
+- `.docs` 문서가 없거나 초기 상태로 재생성해야 할 때
 - `AGENTS.md`가 비대해져 상세를 `core_*` 문서로 분리하려고 할 때
 
 ## 실행 방식
@@ -56,7 +56,7 @@
   - 빌드, 테스트, 환경 변수, 저장소 의존성, 배포/운영 절차는 `core_workflow.md`
 
 ## 패키지 구조 깊이 규칙
-- `.project/core_project.md`의 `코드베이스 구조 (ASCII Tree)`는 **최소 3뎁스(depth)**까지 표현한다.
+- `.docs/core_project.md`의 `코드베이스 구조 (ASCII Tree)`는 **최소 3뎁스(depth)**까지 표현한다.
 - 기준은 저장소 루트 기준 상대 경로이며, 가능하면 도메인/기능 단위 하위 패키지까지 노출한다.
 - 루트 트리와 메인 패키지 트리를 분리하지 않고, **단일 트리 섹션 1개**로 작성한다.
 - 실제 구조상 3뎁스 미만인 경우에만 예외로 두고, 해당 섹션에 `최대 N뎁스` 사유를 한 줄로 명시한다.
@@ -76,7 +76,7 @@
 - 테스트 섹션에는 실행 명령을 적지 않고, 테스트 위치/대표 클래스/읽을 문서만 적는다.
 
 ## Java 버전 추출 규칙 (core_workflow 필수 반영)
-- `.project/core_workflow.md` 생성 시 프로젝트 Java 대상 버전을 반드시 명시한다.
+- `.docs/core_workflow.md` 생성 시 프로젝트 Java 대상 버전을 반드시 명시한다.
 - Java 버전은 하드코딩하지 않고 프로젝트 설정에서 추출한다.
 - Maven 기준 우선순위:
   1. `maven-compiler-plugin`의 `<release>`
@@ -97,11 +97,11 @@
   - `## 보안 및 설정 주의사항`
 - 중복 제거 후 `AGENTS.md`에는 라우팅 정보만 남긴다.
 - `AGENTS.md`에는 상세 정책을 추가하지 않고, 변경 시 대상 문서를 수정한 뒤 동기화 일자만 갱신한다.
-- 빌드/테스트/실행/환경 버전 판단 작업은 먼저 `.project/core_workflow.md`를 보도록 `추가 라우팅`에 명시한다.
+- 빌드/테스트/실행/환경 버전 판단 작업은 먼저 `.docs/core_workflow.md`를 보도록 `추가 라우팅`에 명시한다.
 
 ## 생성 포맷
 
-### 1) `.project/core_project.md`
+### 1) `.docs/core_project.md`
 
 ````markdown
 # {PROJECT_NAME} 프로젝트
@@ -113,10 +113,10 @@
 - 책임 범위(정본): {PROJECT_DOC_AUTHORITY_SCOPE}
 - 포함 범위: {PROJECT_DOC_SCOPE_IN}
 - 제외 범위: {PROJECT_DOC_SCOPE_OUT}
-- 연계 문서: `.project/core_code_style.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_code_style.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 실행 명령, 환경 변수, 프로파일별 패키징, 저장소 접근, 장애 대응 절차는 `.project/core_workflow.md`에만 기록한다.
-  - 네이밍, Mapper 작성 규칙, 로깅 규칙은 `.project/core_code_style.md`에만 기록한다.
+  - 실행 명령, 환경 변수, 프로파일별 패키징, 저장소 접근, 장애 대응 절차는 `.docs/core_workflow.md`에만 기록한다.
+  - 네이밍, Mapper 작성 규칙, 로깅 규칙은 `.docs/core_code_style.md`에만 기록한다.
   - 본 문서에는 구조와 영향 범위만 기록하고 절차성 정보는 넣지 않는다.
 - 근거 소스: `AGENTS.md`, `README.md`, `pom.xml`, `src/main/resources/**`, `src/main/java/**`, `src/test/java/**`
 
@@ -233,7 +233,7 @@ flowchart LR
 ## 테스트 진입점
 - 핵심 테스트 클래스: {KEY_TEST_CLASSES}
 - 스모크 시나리오: {SMOKE_TEST_SCENARIOS}
-- 실행 명령/옵션은 `.project/core_workflow.md`를 따른다.
+- 실행 명령/옵션은 `.docs/core_workflow.md`를 따른다.
 
 ## 변경 시 체크리스트
 1. {CHANGE_IMPACT_CHECK_1}
@@ -241,7 +241,7 @@ flowchart LR
 3. {CHANGE_IMPACT_CHECK_3}
 
 ## 문서 참조
-`.project/` 폴더의 문서 분류 체계:
+`.docs/` 폴더의 문서 분류 체계:
 - `core_*.md`: 프로젝트 구조, 스타일, 명령어 등 핵심 정보
 - `api_asis_*.md`: 현재 시스템 구조 및 로직
 - `api_tobe_*.md`: 신규 기능 설계 및 개선 사항
@@ -251,7 +251,7 @@ flowchart LR
 - AGENTS.md에는 중복 설명을 추가하지 않고, 본 문서 링크만 유지한다.
 ````
 
-### 2) `.project/core_code_style.md`
+### 2) `.docs/core_code_style.md`
 
 ````markdown
 # {PROJECT_NAME} 코딩 스타일 (프로젝트 특화)
@@ -263,10 +263,10 @@ flowchart LR
 - 책임 범위(정본): {CODE_STYLE_DOC_AUTHORITY_SCOPE}
 - 포함 범위: {CODE_STYLE_SCOPE_IN}
 - 제외 범위: {CODE_STYLE_SCOPE_OUT}
-- 연계 문서: `.project/core_project.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 패키지 구조, 기술 스택, 외부 연동 설명은 `.project/core_project.md`에만 기록한다.
-  - 실행 명령, 테스트 절차, 환경 설정, 배포 파일은 `.project/core_workflow.md`에만 기록한다.
+  - 패키지 구조, 기술 스택, 외부 연동 설명은 `.docs/core_project.md`에만 기록한다.
+  - 실행 명령, 테스트 절차, 환경 설정, 배포 파일은 `.docs/core_workflow.md`에만 기록한다.
   - 본 문서에는 어떻게 작성할 것인가만 기록하고 어떻게 실행할 것인가는 적지 않는다.
 
 ## DTO/VO 네이밍 규칙
@@ -353,7 +353,7 @@ log.error("[{}][FAIL] 외부 연동 실패 - requestDate: {}, uuid: {}", jobName
 - 팀 합의가 생기면 AGENTS.md가 아니라 본 문서를 먼저 갱신한다.
 ````
 
-### 3) `.project/core_workflow.md`
+### 3) `.docs/core_workflow.md`
 
 ```markdown
 # {PROJECT_NAME} 개발 워크플로우 가이드
@@ -365,10 +365,10 @@ log.error("[{}][FAIL] 외부 연동 실패 - requestDate: {}, uuid: {}", jobName
 - 책임 범위(정본): {WORKFLOW_DOC_AUTHORITY_SCOPE}
 - 포함 범위: {WORKFLOW_DOC_SCOPE_IN}
 - 제외 범위: {WORKFLOW_DOC_SCOPE_OUT}
-- 연계 문서: `.project/core_project.md`, `.project/core_code_style.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_code_style.md`
 - 중복 방지 기준:
-  - 구조, 아키텍처, 데이터 접근 개요, 외부 연동 지점 설명은 `.project/core_project.md`에만 기록한다.
-  - 네이밍, 로깅, Mapper 규칙은 `.project/core_code_style.md`에만 기록한다.
+  - 구조, 아키텍처, 데이터 접근 개요, 외부 연동 지점 설명은 `.docs/core_project.md`에만 기록한다.
+  - 네이밍, 로깅, Mapper 규칙은 `.docs/core_code_style.md`에만 기록한다.
   - 본 문서에는 어떻게 실행/검증/대응할 것인가만 기록하고 구조 설명은 최소화한다.
 
 ## 빌드
@@ -435,16 +435,16 @@ mvn clean package -P {PROFILE_NAME} -Dspring.profiles.active={PROFILE_NAME}
 
 <!-- ct-init:core-docs:start -->
 ## Core 문서 참조 (ct-init 관리)
-- 프로젝트 구조/모듈 상세: `.project/core_project.md`
-- 코딩 스타일/네이밍 상세: `.project/core_code_style.md`
-- 빌드/테스트/운영 상세: `.project/core_workflow.md`
+- 프로젝트 구조/모듈 상세: `.docs/core_project.md`
+- 코딩 스타일/네이밍 상세: `.docs/core_code_style.md`
+- 빌드/테스트/운영 상세: `.docs/core_workflow.md`
 - AGENTS.md는 라우팅 전용으로 유지하고, 상세 규칙은 위 문서에서 관리한다.
 - 마지막 동기화: {GENERATED_DATE}
 <!-- ct-init:core-docs:end -->
 
 ## 추가 라우팅
-- 빌드/테스트/실행/환경 버전 판단이 필요한 작업은 먼저 `.project/core_workflow.md`를 확인한다.
-- 도메인 AS-IS 문서: `.project/api_asis_*.md`
+- 빌드/테스트/실행/환경 버전 판단이 필요한 작업은 먼저 `.docs/core_workflow.md`를 확인한다.
+- 도메인 AS-IS 문서: `.docs/api_asis_*.md`
 
 ## 운영 원칙
 - 본 문서에는 상세 정책을 추가하지 않는다.

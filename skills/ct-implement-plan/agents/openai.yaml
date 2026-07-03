@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-implement-plan"
+  short_description: "구현 가능한 기준 문서와 개발 가이드 생성"
+  default_prompt: "Use $ct-implement-plan to create a paired implementation criteria document and developer guide from the feature description."
+policy:
+  allow_implicit_invocation: true

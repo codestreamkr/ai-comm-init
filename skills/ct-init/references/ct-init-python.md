@@ -165,10 +165,10 @@ pytest 공식 discovery 기준과 설정 파일을 확인한다.
 - 책임 범위(정본): 프로젝트 구조, 런타임, 패키지 경계, 데이터 접근, 외부 연동의 최종 기준
 - 포함 범위: 런타임 형태, 엔트리포인트, 코드 구조, 모듈 맵, 데이터/API 접근, 외부 연동, 테스트 진입점
 - 제외 범위: 실행 명령, 환경 생성 절차, 세부 코딩 규칙
-- 연계 문서: `.project/core_code_style.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_code_style.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 실행 명령과 환경 관리 절차는 `.project/core_workflow.md`에만 기록한다.
-  - 타입 힌트, 모델/스키마, 테스트 작성 규칙은 `.project/core_code_style.md`에만 기록한다.
+  - 실행 명령과 환경 관리 절차는 `.docs/core_workflow.md`에만 기록한다.
+  - 타입 힌트, 모델/스키마, 테스트 작성 규칙은 `.docs/core_code_style.md`에만 기록한다.
   - 본 문서에는 구조와 영향 범위만 기록한다.
 - 근거 소스: {EVIDENCE_SOURCES}
 
@@ -243,7 +243,7 @@ flowchart TD
 ## 테스트 진입점
 - 테스트 위치: {TEST_LOCATIONS}
 - 대표 테스트: {KEY_TEST_FILES}
-- 실행 명령은 `.project/core_workflow.md`를 따른다.
+- 실행 명령은 `.docs/core_workflow.md`를 따른다.
 
 ## 변경 시 체크리스트
 1. 엔트리포인트와 패키지 import 영향 범위를 확인한다.
@@ -263,10 +263,10 @@ flowchart TD
 - 책임 범위(정본): 네이밍, 타입 힌트, 패키지 배치, 모델/스키마, 오류 처리, 로깅, 테스트 작성 스타일의 최종 기준
 - 포함 범위: 모듈 네이밍, 타입 힌트, 모델/스키마, 서비스/API 작성 기준, 오류/로그/테스트 스타일
 - 제외 범위: 실행 명령, 배포 절차, 전체 아키텍처 설명
-- 연계 문서: `.project/core_project.md`, `.project/core_workflow.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_workflow.md`
 - 중복 방지 기준:
-  - 구조와 런타임 설명은 `.project/core_project.md`에만 기록한다.
-  - 실행 명령과 환경 변수는 `.project/core_workflow.md`에만 기록한다.
+  - 구조와 런타임 설명은 `.docs/core_project.md`에만 기록한다.
+  - 실행 명령과 환경 변수는 `.docs/core_workflow.md`에만 기록한다.
 
 ## 패키지/모듈 네이밍
 {PACKAGE_MODULE_NAMING}
@@ -318,10 +318,10 @@ flowchart TD
 - 책임 범위(정본): Python 버전, 환경 관리자, 의존성 설치, 테스트, lint/typecheck, 배포, 환경 변수의 최종 기준
 - 포함 범위: 환경 생성, 설치, 실행, 테스트, 정적 점검, 환경 변수, 배포 산출물
 - 제외 범위: 코드 구조 설명, 세부 구현 스타일
-- 연계 문서: `.project/core_project.md`, `.project/core_code_style.md`
+- 연계 문서: `.docs/core_project.md`, `.docs/core_code_style.md`
 - 중복 방지 기준:
-  - 구조와 영향 범위는 `.project/core_project.md`에만 기록한다.
-  - 구현 스타일은 `.project/core_code_style.md`에만 기록한다.
+  - 구조와 영향 범위는 `.docs/core_project.md`에만 기록한다.
+  - 구현 스타일은 `.docs/core_code_style.md`에만 기록한다.
 
 ## 버전과 도구
 - Python 버전: {PYTHON_VERSION}
