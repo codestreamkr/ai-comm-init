@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-script-run"
+  short_description: "환경별 실행 스크립트와 env 예시를 생성합니다."
+  default_prompt: "Use $ct-script-run to create local/dev/prod sh and ps1 scripts with env examples."
+policy:
+  allow_implicit_invocation: true
