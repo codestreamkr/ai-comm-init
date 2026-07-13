@@ -36,6 +36,17 @@ def markdown_references(content, roots)
   end.uniq
 end
 
+def template_markdown_references(content, roots)
+  root_pattern = roots.join("|")
+  without_fenced_code(content).lines.flat_map do |line|
+    next [] unless line.include?("템플릿")
+
+    references = line.scan(/`((?:#{root_pattern})\/[^`\s]+)`/).flatten
+    references.concat(line.scan(/\]\(((?:#{root_pattern})\/[^)\s]+)\)/).flatten)
+    references.map { |reference| reference.split(/[?#]/, 2).first }
+  end.uniq
+end
+
 def dynamic_reference?(reference)
   reference.match?(/\{[^}]+\}|<[^>]+>/)
 end
@@ -100,6 +111,87 @@ def contract_sections(content)
   end
 
   sections.transform_values { |lines| lines.join("\n") }
+end
+
+def document_contract_content(content, include_fenced_code:)
+  lines = []
+  fence_type = nil
+  fence_length = 0
+  in_history = false
+
+  content.lines.each do |line|
+    if fence_type
+      lines << line if include_fenced_code && !in_history
+      marker = line.match(/^\s*(`{3,}|~{3,})\s*$/)&.[](1)
+      if marker && marker[0] == fence_type && marker.length >= fence_length
+        fence_type = nil
+        fence_length = 0
+      end
+      next
+    end
+
+    marker = line.match(/^\s*(`{3,}|~{3,})/)&.[](1)
+    if marker
+      fence_type = marker[0]
+      fence_length = marker.length
+      lines << line if include_fenced_code && !in_history
+      next
+    end
+
+    if (heading = line.match(/^## (.+?)\s*$/))
+      in_history = heading[1] == "이력관리"
+      lines << line unless in_history
+      next
+    end
+    next if in_history
+
+    lines << line
+  end
+
+  lines.map { |line| line.strip.gsub(/\s+/, " ") }.reject(&:empty?).join("\n")
+end
+
+def document_paths(skill_dir)
+  %w[references templates workflow components].flat_map do |root|
+    Dir.glob(File.join(skill_dir, root, "**", "*.md"))
+  end.select { |path| File.file?(path) }
+     .map { |path| path.delete_prefix("#{skill_dir}/") }
+     .sort
+end
+
+def previous_document_paths(repository_root, against_ref, skill_relative_dir)
+  stdout, _stderr, status = Open3.capture3(
+    "git", "-C", repository_root, "ls-tree", "-r", "--name-only", against_ref, "--", skill_relative_dir
+  )
+  return [] unless status.success?
+
+  prefix = "#{skill_relative_dir}/"
+  stdout.lines.map(&:strip).filter_map do |path|
+    next unless path.start_with?(prefix)
+
+    relative = path.delete_prefix(prefix)
+    next unless relative.match?(%r{\A(?:references|templates|workflow|components)/.+\.md\z})
+
+    relative
+  end.sort
+end
+
+def expand_document_references(references, available_paths)
+  references.flat_map do |reference|
+    next [] unless reference.end_with?(".md")
+
+    if dynamic_reference?(reference) || reference.include?("*")
+      available_paths.select do |path|
+        if reference.include?("*")
+          File.fnmatch?(reference, path, File::FNM_PATHNAME)
+        else
+          reference_covers?(reference, path)
+        end
+      end
+    else
+      [reference]
+    end
+  end.uniq.sort
 end
 
 repository_root = nil
@@ -323,6 +415,52 @@ Dir.glob(File.join(skills_root, "ct-*"), File::FNM_DOTMATCH).sort.each do |skill
         end
       rescue StandardError => e
         errors << "#{name}: #{against_ref} 계약 비교 실패 - #{e.message}"
+      end
+
+      skill_relative_dir = File.dirname(skill_relative)
+      current_document_paths = document_paths(skill_dir)
+      baseline_document_paths = previous_document_paths(repository_root, against_ref, skill_relative_dir)
+      current_document_references = markdown_references(skill_content, document_roots)
+      previous_document_references = markdown_references(previous_skill, document_roots)
+      current_linked_documents = expand_document_references(current_document_references, current_document_paths)
+      previous_linked_documents = expand_document_references(previous_document_references, baseline_document_paths)
+      current_template_documents = expand_document_references(
+        template_markdown_references(skill_content, document_roots), current_document_paths
+      )
+      previous_template_documents = expand_document_references(
+        template_markdown_references(previous_skill, document_roots), baseline_document_paths
+      )
+
+      (current_linked_documents | previous_linked_documents).sort.each do |relative|
+        previous_content, _resource_stderr, previous_resource_status = Open3.capture3(
+          "git", "-C", repository_root, "show", "#{against_ref}:#{File.join(skill_relative_dir, relative)}"
+        )
+        previous_available = previous_linked_documents.include?(relative) && previous_resource_status.success?
+        current_path = File.join(skill_dir, relative)
+        current_available = current_linked_documents.include?(relative) && File.file?(current_path)
+
+        if previous_available && !current_available
+          contract_changes << "#{name}: #{relative} 삭제"
+          next
+        end
+        if !previous_available && current_available
+          contract_changes << "#{name}: #{relative} 신규"
+          next
+        end
+        next unless previous_available && current_available
+
+        include_fenced_code = relative.start_with?("templates/") ||
+                              current_template_documents.include?(relative) ||
+                              previous_template_documents.include?(relative)
+        previous_contract = document_contract_content(
+          previous_content, include_fenced_code: include_fenced_code
+        )
+        current_contract = document_contract_content(
+          File.read(current_path), include_fenced_code: include_fenced_code
+        )
+        next if previous_contract == current_contract
+
+        contract_changes << "#{name}: #{relative} 본문"
       end
 
       if File.file?(openai_file)

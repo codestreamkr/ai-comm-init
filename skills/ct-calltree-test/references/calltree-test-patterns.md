@@ -56,6 +56,7 @@
 
 - `standard-unit`: 기존 프로젝트 테스트 로그 형식을 적용한다.
 - `legacy-main-test`: 모든 `@Test`에 `[TAG][STEP]` 형식과 운영 메서드 호출 직전 `[➡️ CALL]` 로그를 적용한다.
+- `legacy-main-test`: 분기 결과, 하위 호출 생략과 의도된 예외 처리 결과를 `[BRANCH]`, `[NO_SERVICE_CALL]`, `[EXPECTED_ERROR_LOG]`처럼 의미가 드러나는 단계 로그로 남긴다.
 - 로그 필드는 프로젝트의 허용 목록과 마스킹 기준에서 선택한다.
 
 ## Fixture
@@ -96,4 +97,4 @@
 
 ## 이력관리
 
-- 2026-07-13: 모드별 fixture 허용 기준, legacy 적합성 게이트, 실제 존재하는 모든 negative·예외 경로, negative helper 실행과 미호출·생략 반환 의미, 예외 삼킴의 비전파·관찰 결과, Controller 직접 검증과 external caller·wrapper 검증 기준을 복원했다.
+- 2026-07-13: 모드별 fixture 허용 기준, legacy 적합성 게이트, 실제 존재하는 모든 negative·예외 경로, negative helper 실행과 미호출·생략 반환 의미, legacy 분기·생략·예외 결과의 단계 로그, 예외 삼킴의 비전파·관찰 결과, Controller 직접 검증과 external caller·wrapper 검증 기준을 복원했다.

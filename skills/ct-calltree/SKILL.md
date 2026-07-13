@@ -21,6 +21,8 @@ Java 진입점의 의미 있는 호출 흐름과 테스트 대상 호출을 실�
   - 상위 호출자 검색
   - `Service → Service/Helper → DAO/Mapper/Repository/외부 연동`
 - 기본 깊이: 루트 메서드를 depth 1로 계산한 3depth
+- depth 2 메서드의 본문을 열어 의미 있는 직접 collaborator를 depth 3에 기록한다. 의미 있는 호출이 없을 때만 leaf로 둔다.
+- depth 2의 private helper 내부에서 직접 호출하는 Service, DAO, Mapper, Repository와 외부 연동도 depth 3에 기록한다.
 - 선택 심화: 아래 조건에 해당하는 `[TC:✅]` 노드만 테스트 경계가 드러날 때까지 추적
   - private helper 체인이 2단계 이상 이어져 3depth에서 최종 분기, 대상 호출 또는 assertion 경계가 끊긴다.
   - 예외 삼킴, 후처리 또는 부수효과가 helper 안에 숨어 있다.
@@ -200,4 +202,4 @@ getter/setter, 로깅, 단순 컬렉션 조작, DTO 필드 설정, 범용 라이
 
 ## 이력관리
 
-- 2026-07-13: 최종 TC 판정 표현과 외부 경계 우선순위, mapper·repository를 포함한 역할 기반 노드 분류, canonical 완전 시그니처 `callNode`, 안정적인 `callPath`, 트리의 `nodeId` 표기, CallTree 계약 버전, `nextNodeSequence` 기반 nodeId 안정성, private helper 심화, legacy 호출 별칭, 혼합 비ASCII 필터 충돌 방지, 기존 문서 전체 재구성과 제3 탐색 경로 호환 규칙을 보강했다.
+- 2026-07-13: 최종 TC 판정 표현과 외부 경계 우선순위, mapper·repository를 포함한 역할 기반 노드 분류, depth 2 본문과 private helper의 의미 있는 직접 호출을 depth 3에 기록하는 기준, canonical 완전 시그니처 `callNode`, 안정적인 `callPath`, 트리의 `nodeId` 표기, CallTree 계약 버전, `nextNodeSequence` 기반 nodeId 안정성, private helper 심화, legacy 호출 별칭, 혼합 비ASCII 필터 충돌 방지, 기존 문서 전체 재구성과 제3 탐색 경로 호환 규칙을 보강했다.

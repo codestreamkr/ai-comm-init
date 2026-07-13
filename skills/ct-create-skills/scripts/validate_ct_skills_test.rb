@@ -428,6 +428,117 @@ class ValidateCtSkillsTest < Minitest::Test
     end
   end
 
+  def test_against_detects_linked_reference_body_change
+    files = { "references/contract.md" => reference_document("기존 계약") }
+
+    with_skills_root(body: "`references/contract.md`를 읽는다.", files: files) do |root|
+      commit_fixture(root)
+
+      reference_file = File.join(root, "ct-sample", "references", "contract.md")
+      updated = File.read(reference_file).sub("검증에 사용하는 문서다.", "변경된 계약을 적용하는 문서다.")
+      File.write(reference_file, updated)
+
+      output, status = run_validator(root, "--against", "HEAD")
+
+      assert status.success?, output
+      assert_includes output, "CONTRACT_CHANGE ct-sample: references/contract.md 본문"
+    end
+  end
+
+  def test_against_detects_linked_reference_deletion
+    files = { "references/contract.md" => reference_document("삭제할 계약") }
+
+    with_skills_root(body: "`references/contract.md`를 읽는다.", files: files) do |root|
+      commit_fixture(root)
+
+      skill_file = File.join(root, "ct-sample", "SKILL.md")
+      updated = File.read(skill_file).sub("`references/contract.md`를 읽는다.", "별도 참조 없이 실행한다.")
+      File.write(skill_file, updated)
+      FileUtils.rm(File.join(root, "ct-sample", "references", "contract.md"))
+
+      output, status = run_validator(root, "--against", "HEAD")
+
+      assert status.success?, output
+      assert_includes output, "CONTRACT_CHANGE ct-sample: references/contract.md 삭제"
+    end
+  end
+
+  def test_against_detects_linked_reference_addition
+    with_skills_root(body: "별도 참조 없이 실행한다.") do |root|
+      commit_fixture(root)
+
+      skill_file = File.join(root, "ct-sample", "SKILL.md")
+      updated = File.read(skill_file).sub("별도 참조 없이 실행한다.", "`references/contract.md`를 읽는다.")
+      File.write(skill_file, updated)
+      write_file(
+        File.join(root, "ct-sample", "references", "contract.md"),
+        reference_document("신규 계약")
+      )
+
+      output, status = run_validator(root, "--against", "HEAD")
+
+      assert status.success?, output
+      assert_includes output, "CONTRACT_CHANGE ct-sample: references/contract.md 신규"
+    end
+  end
+
+  def test_against_detects_fenced_code_change_in_templates_directory
+    files = {
+      "templates/output.md" => template_document("기존 출력 예시")
+    }
+
+    with_skills_root(body: "`templates/output.md`를 출력에 사용한다.", files: files) do |root|
+      commit_fixture(root)
+
+      template_file = File.join(root, "ct-sample", "templates", "output.md")
+      updated = File.read(template_file).sub("기존 출력 예시", "변경 출력 예시")
+      File.write(template_file, updated)
+
+      output, status = run_validator(root, "--against", "HEAD")
+
+      assert status.success?, output
+      assert_includes output, "CONTRACT_CHANGE ct-sample: templates/output.md 본문"
+    end
+  end
+
+  def test_against_detects_fenced_code_change_in_named_template_source
+    files = {
+      "references/output-format.md" => template_document("기존 출력 예시")
+    }
+
+    with_skills_root(body: "`references/output-format.md`를 템플릿 정본으로 사용한다.", files: files) do |root|
+      commit_fixture(root)
+
+      template_file = File.join(root, "ct-sample", "references", "output-format.md")
+      updated = File.read(template_file).sub("기존 출력 예시", "변경 출력 예시")
+      File.write(template_file, updated)
+
+      output, status = run_validator(root, "--against", "HEAD")
+
+      assert status.success?, output
+      assert_includes output, "CONTRACT_CHANGE ct-sample: references/output-format.md 본문"
+    end
+  end
+
+  def test_against_ignores_fenced_example_change_in_general_reference
+    files = {
+      "references/example.md" => template_document("기존 참고 예시")
+    }
+
+    with_skills_root(body: "`references/example.md`를 참고 기준으로 읽는다.", files: files) do |root|
+      commit_fixture(root)
+
+      reference_file = File.join(root, "ct-sample", "references", "example.md")
+      updated = File.read(reference_file).sub("기존 참고 예시", "변경 참고 예시")
+      File.write(reference_file, updated)
+
+      output, status = run_validator(root, "--against", "HEAD")
+
+      assert status.success?, output
+      refute_includes output, "CONTRACT_CHANGE"
+    end
+  end
+
   def test_against_excludes_history_section_from_contract_changes
     with_skills_root(body: "## 작업 절차\n\n- 기본 절차로 실행한다.") do |root|
       commit_fixture(root)
@@ -556,6 +667,22 @@ class ValidateCtSkillsTest < Minitest::Test
       # #{title}
 
       검증에 사용하는 문서다.
+
+      ## 이력관리
+
+      - 2026-07-13: 회귀 검증용 문서를 구성했다.
+    MARKDOWN
+  end
+
+  def template_document(example)
+    <<~MARKDOWN
+      # 출력 문서
+
+      설명은 그대로 유지한다.
+
+      ```text
+      #{example}
+      ```
 
       ## 이력관리
 

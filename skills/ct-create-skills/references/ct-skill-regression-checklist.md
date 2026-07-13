@@ -8,7 +8,7 @@
 
 - 트리거: 명시 호출, 자연어 호출, 제외 범위
 - 입력: 필수값, 선택값, 모호할 때 질문 기준
-- 참조: 항상 읽는 파일과 조건부로 읽는 파일
+- 참조: 항상 읽는 파일과 조건부로 읽는 파일, 직접 연결된 `references/`, `templates/`, `workflow/`, `components/` 문서의 본문
 - 출력: 파일 경로, 파일명, 필수 섹션과 대화 보고
 - 쓰기 범위: 생성, 갱신, 보존, 사용자 확인이 필요한 변경
 - 완료 조건: 필수 검증과 실행하지 못했을 때 보고
@@ -30,7 +30,9 @@
 
 1. `ruby scripts/validate_ct_skills_test.rb`로 검증기 자체 회귀 테스트를 실행한다.
 2. `ruby scripts/validate_ct_skills.rb`로 직접 참조 파일의 존재와 보조 리소스의 연결을 확인한다.
-3. `ruby scripts/validate_ct_skills.rb --against HEAD`로 fenced code를 제외한 모든 2단계 계약 섹션과 `agents/openai.yaml` 표시 정보·호출 정책의 변경을 확인한다.
+3. `ruby scripts/validate_ct_skills.rb --against HEAD`로 모든 2단계 계약 섹션, 직접 연결된 `references/`, `templates/`, `workflow/`, `components/` 문서의 추가·삭제·본문 변경, `agents/openai.yaml` 표시 정보·호출 정책의 변경을 확인한다.
+   - 일반 설명 문서의 fenced code 예시는 계약 비교에서 제외한다.
+   - `templates/` 아래 Markdown과 `SKILL.md`가 템플릿 정본으로 직접 연결한 문서는 fenced code까지 계약으로 비교한다.
    - 계약 변경이 있으면 실패해야 하는 자동화에서는 `ruby scripts/validate_ct_skills.rb --against HEAD --fail-on-contract-change`를 사용한다.
 4. Git 반영 준비 후 `ruby scripts/validate_ct_skills.rb --tracked`로 신규 reference, template, script와 asset의 추적 여부를 확인한다.
 5. `git diff --check -- skills/ct-*`를 실행한다.
@@ -63,9 +65,10 @@
 - 각 상세 규칙의 정본이 하나로 확정됐다.
 - 모든 직접 참조 파일이 존재한다.
 - `references/`, `templates/`, `workflow/`, `components/`의 보조 문서가 `SKILL.md`의 정확한 경로나 동적 선택 경로로 연결됐다.
+- 직접 연결된 보조 문서의 추가·삭제·본문 변경과 템플릿 정본의 fenced code 변경이 `CONTRACT_CHANGE`에 포함됐다.
 - UI 메타데이터와 실제 동작이 일치한다.
 - 구조 검증과 대표 호출 검증 결과가 기록됐다.
 
 ## 이력관리
 
-- 2026-07-13: CT 스킬 변경 전후 기능 보존, Git ref 대비 전체 2단계 계약과 UI 메타데이터 변경 보고·선택적 실패, Git 추적·직접 참조·고립 리소스·컴포넌트 허용 목록·agents 구조·이력 검사, 의존성 부족 시 대체·보고 기준과 대표 회귀 시나리오를 정리했다.
+- 2026-07-13: CT 스킬 변경 전후 기능 보존, Git ref 대비 전체 2단계 계약·직접 연결된 보조 문서의 추가·삭제·본문·템플릿 fenced code·UI 메타데이터 변경 보고와 선택적 실패, Git 추적·직접 참조·고립 리소스·컴포넌트 허용 목록·agents 구조·이력 검사, 의존성 부족 시 대체·보고 기준과 대표 회귀 시나리오를 정리했다.

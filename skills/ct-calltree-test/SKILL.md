@@ -25,13 +25,14 @@ CallTree는 대상 범위를 제공하고 실제 운영 코드는 테스트 조�
 - 허용 옵션 밖의 값은 대상이나 모드로 추정하지 않고 확인이 필요한 입력으로 보고한다.
 - 실행 가능한 입력은 탐색 순서에서 하나로 확정된 CallTree와, 지정된 경우 Git commit으로 확인되는 benchmark ref다.
 - `target-call`은 아래 우선순위로 대소문자를 유지해 일치시킨다.
-  1. `N01` 같은 값이 노드 요약의 `nodeId`와 정확히 일치하면 해당 노드를 확정한다.
+  1. `N01` 같은 값이 노드 요약의 `nodeId`와 정확히 일치하거나, legacy fallback에서 `legacy-N01` 같은 값이 임시 식별자와 정확히 일치하면 해당 노드를 확정한다.
   2. 바깥쪽 backtick과 앞뒤 공백을 제거하고 receiver 구분자 `#`을 `.`으로 통일한다.
-  3. selector에 괄호가 있으면 source와 import를 기준으로 receiver와 파라미터 타입을 canonical 표기로 정규화한 뒤 `callNode`와 일치시킨다.
-  4. selector에 괄호가 없으면 후보의 마지막 메서드 파라미터 표현만 제거해 일치시킨다.
+  3. selector에 ` -> `가 있으면 canonical `callPath`와 정확히 일치시킨다.
+  4. selector에 괄호가 있으면 source와 import를 기준으로 receiver와 파라미터 타입을 canonical 표기로 정규화한 뒤 `callNode`와 일치시킨다.
+  5. selector에 괄호가 없으면 후보의 마지막 메서드 파라미터 표현만 제거해 일치시킨다.
 - 완전 시그니처는 receiver, 메서드명과 canonical 파라미터 타입을 모두 포함한다. source와 import를 확인해 receiver와 참조형은 패키지 포함 클래스명, primitive는 Java 키워드, generic은 erasure 타입, varargs는 배열, nested class는 canonical name의 `.` 표기로 정규화한다. 예: `com.example.PaymentService#pay(java.lang.String,int)`와 `com.example.PaymentService.pay(java.lang.String,int)`는 같은 selector다.
-- 파라미터를 생략한 selector가 overload 등 여러 노드와 일치하면 각 후보의 `nodeId`와 원본 `callNode`를 보고하고 `nodeId` 또는 완전 시그니처로 하나를 확정한다.
-- 완전 시그니처도 여러 호출 경로의 노드와 일치하면 같은 방식으로 후보를 보고하고 `nodeId`로 확정한다.
+- 파라미터를 생략한 selector가 overload 등 여러 노드와 일치하면 각 후보의 `nodeId` 또는 legacy 임시 식별자, `callPath`, 원본 `callNode`를 보고하고 식별자, canonical `callPath` 또는 완전 시그니처로 하나를 확정한다.
+- 완전 시그니처도 여러 호출 경로의 노드와 일치하면 같은 후보 필드를 보고하고 식별자 또는 canonical `callPath`로 확정한다.
 
 ## 필수 참조
 
@@ -103,7 +104,7 @@ CallTree는 대상 범위를 제공하고 실제 운영 코드는 테스트 조�
    - legacy fallback에서 추론한 값과 범위 정확도 한계는 audit에 기록한다.
    - 버전 `2`가 아닌 명시 버전: 테스트와 산출물을 수정하지 않고 중단한다. 지원하지 않는 버전, 문서 경로와 필요한 호환 CallTree 재생성 조건을 보고한다.
    - 버전 `2`의 `nodeId`는 입력값을 그대로 유지한다.
-   - legacy fallback에서만 audit용 임시 식별자 `legacy-N01`부터 부여하며 CallTree 원문에는 쓰지 않는다.
+   - legacy fallback에서만 트리 순서대로 audit와 `target-call` 선택에 사용하는 임시 식별자 `legacy-N01`부터 부여하며 CallTree 원문에는 쓰지 않는다.
 3. 기존 운영 코드, 테스트, fixture, MainTest 위치를 검색한다.
 4. 테스트 전략 값과 legacy 적합성을 확정한다.
    - UnitTest를 직접 생성하고 접근 가능한 `setUp()`을 수동 호출해 필요한 상태를 완성할 수 있는지 확인한다.
@@ -160,6 +161,8 @@ CallTree는 대상 범위를 제공하고 실제 운영 코드는 테스트 조�
 
 - 같은 테스트 파일을 수정하는 노드는 한 Agent가 처리한다.
 - 공통 fixture, MainTest, audit는 메인 흐름에서 관리한다.
+- Agent에는 담당 노드, UnitTest 경로, fixture 경로와 적용할 스킬 규칙을 전달한다.
+- Agent는 변경한 테스트 파일과 메서드, assertion 근거 매핑과 완료 게이트 자체 점검 결과를 반환한다.
 - 메인 흐름에서 assertion 근거와 완료 게이트를 다시 확인한다.
 
 ## 검증
@@ -184,4 +187,4 @@ CallTree는 대상 범위를 제공하고 실제 운영 코드는 테스트 조�
 
 ## 이력관리
 
-- 2026-07-13: legacy CallTree와 호출 별칭, 제3 탐색 경로 처리, nodeId 우선·canonical 완전 시그니처 target-call 선택, 입력 오류 일괄 확인, legacy benchmark 표현 호환과 commit 검증, contractVersion 2의 `nodeId + callPath + callNode` 행·중복 개수 검증, repository 계층, `nextNodeSequence` 기반 nodeId 안정성, external caller·wrapper 테스트 매핑, 모든 실제 negative·예외 경로와 예외 삼킴 의미 검증, legacy 적합성 차단과 확인 기반 standard-unit 전환, 기존 테스트 복제와 과도한 호출망 추적 차단 기준을 정리했다.
+- 2026-07-13: legacy CallTree와 호출 별칭, 제3 탐색 경로 처리, nodeId·legacy 임시 식별자·canonical callPath·완전 시그니처 target-call 선택, 입력 오류 일괄 확인, legacy benchmark 표현 호환과 commit 검증, contractVersion 2의 `nodeId + callPath + callNode` 행·중복 개수 검증, repository 계층, `nextNodeSequence` 기반 nodeId 안정성, external caller·wrapper 테스트 매핑, 모든 실제 negative·예외 경로와 예외 삼킴 의미 검증, legacy 적합성 차단과 확인 기반 standard-unit 전환, 병렬 Agent 인계·반환 계약, 기존 테스트 복제와 과도한 호출망 추적 차단 기준을 정리했다.
