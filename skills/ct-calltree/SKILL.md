@@ -1,215 +1,203 @@
 ---
 name: ct-calltree
-description: Java 파일 호출 관계(Call Tree) 분석
+description: Java Controller 또는 Service의 호출 관계를 분석해 3depth CallTree와 최종 `[TC:✅]` 테스트 대상을 문서로 만든다. 사용자가 `$ct-calltree`, `ct-calltree`, legacy `/ct:calltree`, `calltree`, Java 호출 흐름 분석, CallTree 생성 또는 테스트 대상 호출 판정을 요청할 때 사용한다.
 ---
 
-# Java Call Tree 분석
+# CT CallTree
 
-Java 파일(Controller/Service)의 메서드 호출 관계를 분석하여 Call Tree를 생성한다.
-`[TC:✅]` 대상 여부를 최종 판정하는 것이 이 커맨드의 핵심 목적이다.
+Java 진입점의 의미 있는 호출 흐름과 테스트 대상 호출을 실제 소스 기준으로 정리한다.
 
-## 분석 방식
+## 입력
 
-### Controller 파일 입력 시
-- 하위 호출만 분석: `Controller → Service → Mapper/DAO/외부연동` (기본 3depth)
-- 최상위 레이어이므로 상위 호출 없음
+- Java 파일 경로 또는 클래스명
+- 선택 입력: 메서드명, 엔드포인트, 분석 필터
+- legacy 호출인 `/ct:calltree`, `calltree`도 같은 입력 규칙으로 처리한다.
+- 파일명만 주어지면 저장소에서 찾고 후보가 여러 개일 때만 기준 클래스를 묻는다.
 
-### Service 파일 입력 시
-- 상위 호출: 누가 이 Service를 호출하는지 검색
-- 하위 호출: 메서드 본문에서 호출하는 Service/Mapper/DAO/외부연동 파싱
+## 분석 범위
 
-### 분석 대상 레이어
-- Controller: @RestController, @Controller
-- Service: @Service, Business Logic
-- Util/Helper: 유틸리티, 헬퍼 클래스
-- Mapper/DAO: 데이터 접근 계층
+- Controller 입력: `Controller → Service/Helper → DAO/Mapper/Repository/외부 연동`
+- Service 입력:
+  - 상위 호출자 검색
+  - `Service → Service/Helper → DAO/Mapper/Repository/외부 연동`
+- 기본 깊이: 루트 메서드를 depth 1로 계산한 3depth
+- 선택 심화: 아래 조건에 해당하는 `[TC:✅]` 노드만 테스트 경계가 드러날 때까지 추적
+  - private helper 체인이 2단계 이상 이어져 3depth에서 최종 분기, 대상 호출 또는 assertion 경계가 끊긴다.
+  - 예외 삼킴, 후처리 또는 부수효과가 helper 안에 숨어 있다.
+  - 심화 대상 노드의 경계가 확인되면 멈추고 형제 노드는 함께 펼치지 않는다.
 
-## 출력 표기 규칙
+호출 트리의 별도 노드는 아래 허용 유형에서 선택한다.
 
-### Depth 규칙
-- 기본 3depth. 전체 호출망의 full expansion은 하지 않는다.
-- 각 `메서드별 호출 트리` 섹션은 루트 메서드를 depth1로 센다.
-- depth2의 메서드는 본문을 열어 business-significant direct collaborator를 depth3으로 적는다.
-- direct collaborator 범위: service/dao/mapper/helper/external 호출, 흐름에 영향을 주는 private helper
-- 별도 노드로 늘리지 않는 것:
-  - getter/setter, logging, 단순 컬렉션 add/filter
-  - DTO 필드 세팅만 있는 구문, JDK/commons/gson 같은 범용 라이브러리 호출
-- `[TC:✅]` depth2 메서드는 가능한 한 depth3을 채우되, 의미 있는 collaborator가 없으면 leaf로 두고 한 줄 요약만 남긴다.
-- private helper가 depth2에 있으면 그 helper 안의 service/dao 호출도 같은 섹션에서 depth3으로 펼친다.
-- 상세도는 섹션 안에서 맞춘다. 실제 메서드명과 설명문만의 혼합을 최소화한다.
+- Service와 업무 helper
+- DAO, Mapper와 Repository
+- 외부 API, MQ, 파일, 메일, SMS
+- 분기와 하위 호출을 제어하는 private helper
+- 상태 변경, 저장, 보상, 후처리
 
-### 선택적 심화
-- 기본 3depth로 흐름 이해가 되면 거기서 멈춘다.
-- 아래 중 하나면 특정 `[TC:✅]` 노드만 더 깊게 적을 수 있다:
-  - private helper 체인이 2단계 이상 이어져 3depth만으로 의미가 끊기는 경우
-  - 예외 삼킴, 후처리, 부수효과가 helper 안에 숨어 있는 경우
-- 심화는 "그 노드의 테스트 경계가 보일 때까지"만 한다. 형제 노드까지 함께 펼치지 않는다.
+getter/setter, 로깅, 단순 컬렉션 조작, DTO 필드 설정, 범용 라이브러리 호출은 부모 노드 설명에 필요한 경우만 요약한다.
 
-### `[TC:✅]` 표기
-- 테스트케이스 대상인 호출만 메서드명 앞에 `[TC:✅]` 접두사로 표기한다.
-- 비대상 호출은 아무 표기도 하지 않는다. (`X`, `O` 문자 표기 금지)
-- `[TC:✅]`는 후보가 아니라 최종 판정이다.
-- `[TC:✅]`는 트리 본문 표기에서 끝나지 않는다. `[TC:✅] 노드 요약`에도 같은 호출을 구조화해서 남긴다.
-- 예시:
-  - `├─ [TC:✅] paymentService.findLimit()`
-  - `├─ orderDao.insertOrderNormal()`
+## 출력 표기
 
-## `[TC:✅]` 판단 기준
+- `[TC:✅]`는 최종 테스트 대상으로 판정한 호출 앞에만 붙인다.
+- 대상 노드는 `[TC:✅] [N01] {callNode}` 형식으로 `nodeId`를 함께 표기한다.
+- 비대상 호출은 접두사 없이 적는다. 비대상 표시에 `O`, `X` 또는 별도 상태 기호를 사용하지 않는다.
+- 루트 메서드도 본문 기준으로 판정한다. 진입점이라는 이유만으로 `[TC:✅]`를 붙이지 않는다.
+- 트리의 모든 메서드 노드는 canonical `callNode`로 적는다.
+- 트리 본문과 `[TC:✅] 노드 요약`은 `nodeId`, `callPath`, `callNode` 행과 중복 개수까지 정확히 일치시킨다.
+- 실제 메서드명과 설명문을 같은 트리 깊이의 노드로 혼용하지 않는다.
 
-### 대상 (`[TC:✅]`)
-아래 중 하나라도 포함하면 대상 후보:
-- 조건 분기 / 예외 처리 / 검증
-- 데이터 가공 / 조합 / 반복
-- 외부 연동 (API, MQ, 파일, 메일/SMS 등)
-- 복수 컴포넌트 호출을 조합하는 오케스트레이션 로직
-- 조회 후 후처리 (문자열 분해, DTO 필드 재구성, 합산/매핑)
-- 예외를 삼키고 로그만 남기거나 기본값을 반환하는 메서드
-- private helper라도 분기, DTO 조립, service 호출 제어를 담당하는 경우
+## `[TC:✅]` 판정
 
-### 비대상 (미표기)
-아래에 **모두** 해당하면 제외:
-- 내부 로직 없이 mapper/dao/service를 즉시 호출하고 반환
-- 조건 분기, 데이터 변환/후처리, 예외 처리, 부수효과 없음
+메서드 본문에 아래 동작이 하나라도 있으면 테스트 대상으로 판정한다.
 
-### 보정 규칙
-1. **메서드 본문 기준으로 판단한다** — 호출자의 분기가 복잡해도 target 메서드 본문이 단순 위임이면 비대상일 수 있다.
-2. **외부 조건과 내부 조건을 분리한다** — 외부 조건(호출 여부를 결정하는 상위 분기)이 복잡해도 본문이 단순하면 `[TC:✅]`는 상위 노드에 준다.
-3. **단순 조회라도 후처리가 있으면 대상이다** — DAO 1회 호출이어도 결과를 분해/매핑/정규화하면 대상.
-4. **애매하면 한 단계 더 추적한다** — 호출자/피호출자를 한 단계 더 보고 판단한다.
+- 조건 분기, 반복, 검증, 예외 처리
+- 데이터 가공, 조합, 후처리
+- 외부 연동 또는 부수효과
+- 복수 컴포넌트 호출을 조정하는 흐름
+- 예외를 삼키고 기본값을 반환하는 처리
+- 호출 여부나 하위 호출을 제어하는 private helper
 
-### 판정 체크리스트
-1. 메서드 본문 안에 조건 분기/반복/예외 처리/외부연동/후처리가 있는가
-2. 단순 조회/위임처럼 보여도 반환값 재가공이 있는가
-3. 복잡성은 상위 호출자에만 있고 현재 메서드는 비어 있는가
-4. 테스트를 만들었을 때 별도 가치가 있는가, 아니면 상위 흐름 테스트로 충분한가
+외부 경계 호출은 단순 위임보다 우선해 판정한다.
 
-→ 1, 2 중 하나가 명확하면 `[TC:✅]` 후보.
-→ 3, 4가 모두 "상위에서만 의미 있음"이면 비대상.
+- 대상 메서드가 외부 API, MQ, 파일, 메일 또는 SMS 경계를 직접 호출하면 즉시 반환하더라도 `[TC:✅]`로 판정한다.
+- 내부 Service나 helper에 즉시 위임하고 실제 외부 경계를 호출하지 않는 메서드는 아래 비대상 기준을 적용한다.
 
-### 자주 틀리는 오판
-1. 상위 분기가 복잡하다는 이유만으로 하위 단순 조회 메서드를 `[TC:✅]`로 표시
-2. 메서드가 실제로는 호출되는데 `NoCall` 성격의 테스트를 기준으로 대상 판단
-3. 테스트 수를 맞추려고 단순 조회에 `[TC:✅]`를 부여
-4. 단순 조회처럼 보여도 내부 후처리가 있는 것을 놓침
-5. 예외를 잡고 무시하는 메서드를 단순 위임으로 잘못 분류
-6. 운영코드에 없는 게이트를 가정해서 대상을 부풀림
+아래 조건을 모두 만족하면 비대상으로 둔다.
 
-## 실행 단계
+- 다른 컴포넌트를 즉시 호출하고 반환한다.
+- 분기, 변환, 후처리, 예외 처리, 부수효과가 없다.
+- 상위 흐름 테스트만으로 동작을 충분히 검증할 수 있다.
 
-1. 파일 타입 자동 감지 (`*Controller.java`, `*Service.java`)
-2. 파일 위치 검색 및 내용 읽기
-3. 메서드 시그니처 및 호출 관계 추출
-4. Service인 경우 상위 호출자 검색
-5. 각 호출 노드에 대해 `[TC:✅]` 여부를 판정
-6. `[TC:✅]` 노드를 `[TC:✅] 노드 요약` 표에 구조화
-7. 출력 파일 생성 (기존 파일이 있어도 전체를 새로 작성)
-8. 초안 완료 후 기존 CallTree 문서가 있으면 누락/범위 차이만 점검
+판정은 호출자 복잡도가 아니라 대상 메서드 본문을 기준으로 한다. 애매하면 호출자 또는 피호출자를 한 단계 더 확인한다.
 
-## [TC:✅] 노드 요약 작성 규칙
+## 노드 요약 계약
 
-`[TC:✅]` 노드를 행 단위로 정리하는 분석 요약 표다.
+`[TC:✅] 노드 요약`은 `ct-calltree-test`가 읽는 후속 입력 계약이다.
 
-| 필드 | 설명 |
-|------|------|
+- 현재 계약 버전: `2`
+- `문서 정보`의 `contractVersion`에 현재 버전을 기록한다.
+- `문서 정보`의 `nextNodeSequence`에 다음 신규 노드가 사용할 양의 정수 순번을 기록한다.
+- `contractVersion`이 없는 기존 문서는 legacy 계약으로 본다.
+- 기존 문서를 갱신할 때는 현재 필드와 판정 근거를 다시 확인하고 버전 `2`로 작성한다.
+- 기존 문서의 `contractVersion`이 `2`가 아닌 명시 버전이면 덮어쓰지 않는다. 지원하지 않는 버전과 경로를 보고하고 호환 규칙이 확정된 뒤 갱신한다.
+
+| 필드 | 기준 |
+|---|---|
 | `nodeId` | 문서 안에서 안정적으로 참조할 식별자 |
-| `callNode` | 실제 호출 표현 |
-| `layer` | `controller`, `helper`, `service`, `utility`, `external`, `dao` |
-| `family` | 역할 분류 (예: `precheck`, `mapping`, `payment`, `db-write`) |
-| `bundle` | 의미적으로 하나의 단위를 이루는 호출 묶음 (예: `payment-core`, `trx-family`) |
-| `branchType` | 호출자 관점에서 관찰되는 호출 조건 구조. 아래 branchType 작성 기준 참조 |
+| `callPath` | 루트부터 대상까지 canonical `callNode`를 ` -> `로 연결한 안정적인 호출 경로 |
+| `callNode` | receiver, 메서드명과 파라미터 타입을 포함한 호출 시그니처 |
+| `layer` | `controller`, `helper`, `service`, `utility`, `external`, `dao`, `mapper`, `repository` |
+| `family` | `precheck`, `mapping`, `payment`, `db-write`처럼 호출이 맡은 업무 역할 |
+| `bundle` | `payment-core`, `trx-family`처럼 함께 검증할 업무 단위 |
+| `branchType` | 호출자 관점의 호출·미호출 조건 |
 | `priority` | `critical`, `high`, `normal` |
 
-### branchType 작성 기준
+`branchType`에는 대상 메서드 내부 분기를 적지 않는다.
 
-branchType은 **호출자(caller) 관점에서 관찰되는 호출 조건**만 기재한다.
-대상 메서드 내부의 서비스 로직 분기는 기재하지 않는다.
+`family`와 `bundle`은 메서드명, 클래스명, 테스트 파일명이 아니라 역할 기준으로 작성한다. 같은 역할은 같은 `family`를 사용하고, 하나의 업무 결과를 함께 완성하는 호출은 같은 `bundle`로 묶는다.
 
-| 기재 대상 (호출자 관점) | 예시 |
-|------------------------|------|
-| 호출 여부가 조건에 따라 달라지는 경우 | `normal/skip` |
-| 선행 단계 실패로 호출되지 않는 경우 | `normal/exception` |
-| 호출자의 if 분기로 호출 경로가 갈리는 경우 | `applicable/skip` |
-| 보상 취소처럼 예외 시에만 호출되는 경우 | `compensation/skip` |
+`callNode`는 `com.example.PaymentService.pay(java.lang.String,int)`처럼 receiver 구분자에 `.`을 사용해 작성한다. overload가 없더라도 괄호와 canonical 파라미터 타입을 유지하고, 트리 본문과 노드 요약에 같은 시그니처를 사용한다.
 
-| 기재하지 않는 것 (메서드 내부 분기) | 이유 |
-|-----------------------------------|------|
-| `new/reuse/not-found` | 서비스 본문 안의 분기. 호출자 관점에서 관찰 불가 |
-| `card/bank/pay/fallback` | 결제수단별 내부 분기. 서비스 내부 구조 |
-| `use/skip/reject` | 정책별 내부 분기. 서비스 내부 구조 |
+### `callNode` canonical 표기
 
-### 작성 원칙
-- `family`와 `bundle`은 메서드명이 아니라 역할 기준으로 적는다.
-- 트리 본문의 `[TC:✅]` 목록과 이 표의 `callNode`는 서로 일치해야 한다.
-- 판정 근거는 `[TC:✅]로 본 메서드` 섹션에 서술한다. 표에는 넣지 않는다.
+- receiver와 참조형 파라미터는 패키지를 포함한 정규화된 클래스명을 사용한다.
+- primitive는 Java 키워드를 그대로 사용한다.
+- generic 타입은 타입 인자를 제거한 erasure 타입으로 기록한다. 예: `java.util.List<java.lang.String>`은 `java.util.List`다.
+- varargs는 배열로 통일한다. 예: `java.lang.String...`은 `java.lang.String[]`다.
+- 배열 차원은 `[]`로 유지하고 nested class는 canonical name의 `.` 구분자를 사용한다.
+- annotation, modifier, 파라미터명과 불필요한 공백은 기록하지 않는다.
 
-## 출력 파일 규칙
+### `callPath` 표기
 
-### 저장 위치 및 파일명
-- 저장 위치: `.0_my/call-trees/`
-- 기본: `callTree-{ClassName}.md`
-- 필터 적용: `callTree-{ClassName}-{filter}.md`
-  - filter는 파일명에 안전한 짧은 slug로 정리 (예: `v4`, `v1-order`)
+- 루트의 canonical `callNode`부터 대상 노드의 canonical `callNode`까지 실제 호출 순서대로 ` -> `로 연결한다.
+- 트리에 표시한 경로와 노드 요약의 `callPath`를 동일하게 유지한다.
+- 동일한 `callNode`가 여러 호출 경로에 있으면 각 경로를 별도 행과 별도 `nodeId`로 기록한다.
 
-### 필수 섹션
-- 문서 정보
-- 흐름 요약
-- 메서드별 호출 트리
-- [TC:✅] 노드 요약
-- `[TC:✅]`로 본 메서드
-- 비대상으로 둔 메서드
-- 특이사항
+### `nodeId` 안정성
 
-## 출력 템플릿
+- 신규 문서는 트리 순서대로 `N01`부터 부여하고 마지막 부여 순번의 다음 값을 `nextNodeSequence`에 기록한다. 대상 노드가 없으면 `nextNodeSequence`는 `1`이다.
+- 기존 문서를 갱신할 때 같은 `callPath`와 `callNode`에는 기존 `nodeId`를 유지한다.
+- 신규 노드는 `nextNodeSequence`를 사용하고 부여 직후 값을 1 증가시킨다. 중간 삽입을 이유로 기존 노드를 재번호화하지 않는다.
+- `nodeId`는 `N` 뒤에 순번을 최소 두 자리로 0 채움해 만든다. 예: 순번 `2`는 `N02`, 순번 `105`는 `N105`다.
+- 삭제된 번호를 다른 호출에 재사용하지 않는다.
+- `nextNodeSequence`는 문서 갱신과 노드 삭제 때 낮추지 않는다. 현재 노드의 최대 번호보다 작거나 같으면 최대 번호의 다음 값으로 올린다.
+- `nextNodeSequence`가 없는 기존 문서는 노드를 제거하기 전에 기존 본문과 노드 요약에 남은 모든 `nodeId`의 최대 번호 다음 값으로 초기화한다.
+- `callPath`나 `callNode`가 바뀌어 동일 노드인지 확정할 수 없으면 새 번호를 부여하고 `특이사항`에 이전·신규 식별자 관계를 기록한다.
 
-```markdown
-# {ClassName} 호출 흐름
+### `branchType` 허용값
 
-## 문서 정보
-- 대상 클래스: `{ClassName}`
-- 소스: `{source-path}`
-- 필터: `{filter-or-none}`
-- 포함 메서드: `{method-list}`
-- 작성 시각: `{timestamp}`
-- 기준: 메서드 본문 기준으로 `[TC:✅]` 판정
+호출자에서 확인한 조건 구조를 아래 값으로 기록한다.
 
-## 흐름 요약
-- `{entry-method-1}`
-  `{summary}`
+| 호출자 조건 | 값 |
+|---|---|
+| 항상 호출 | `always` |
+| 조건 충족 시 호출 | `applicable/skip` |
+| 정상 처리와 선행 예외 | `normal/exception` |
+| 일반 처리와 조건 생략 | `normal/skip` |
+| 예외 시 보상 호출 | `compensation/skip` |
 
-## 메서드별 호출 트리
+대상 메서드 내부의 도메인 분기는 `[TC:✅]` 판정 근거에 기록한다.
 
-### 1. `{entry-method}`
+### `priority` 허용값
 
-```text
-[TC:✅] {entry-method}()
-├─ ...
-```
+| 값 | 적용 기준 |
+|---|---|
+| `critical` | 결제, 인증, 상태 확정, 외부 승인, 보상, 정합성 영향 |
+| `high` | 주요 검증, 데이터 조립, 복수 컴포넌트 조정 |
+| `normal` | 국소 분기, 후처리, 기본값 처리 |
 
-## [TC:✅] 노드 요약
-| nodeId | callNode | layer | family | bundle | branchType | priority |
-|---|---|---|---|---|---|---|
-| N01 | `{callNode}` | `{layer}` | `{family}` | `{bundle}` | `{branchType}` | `{priority}` |
+### 판정 순서
 
-## `[TC:✅]`로 본 메서드
-- `{callNode}`
-  `{why-target}`
+1. 대상 메서드 본문의 분기, 반복, 예외, 변환, 외부 연동을 확인한다.
+2. 반환값 후처리와 상태 변경을 확인한다.
+3. 복잡성이 호출자에만 있으면 호출자 노드에 판정한다.
+4. 상위 흐름 테스트로 충분한 단순 위임은 비대상으로 분류한다.
+5. 근거가 경계에 걸리면 호출자 또는 피호출자를 한 단계 더 읽는다.
 
-## 비대상으로 둔 메서드
-- `{callNode}`
-  `{why-not-target}`
+## 실행 절차
 
-## 특이사항
-- `{note}`
-```
+1. 대상 파일과 메서드를 확정한다.
+2. 파일 유형과 진입점을 판정한다.
+3. 의미 있는 직접 호출을 추출한다.
+4. Service 입력이면 상위 호출자를 검색한다.
+5. 각 호출의 실제 본문을 읽고 `[TC:✅]` 여부를 판정한다.
+6. 트리 본문과 노드 요약의 `[TC:✅]` 목록을 맞춘다.
+7. `.docs/call-trees/`, `.0_my/call-trees/`, 저장소 전체 순서로 같은 문서를 찾고 누락과 범위 차이를 확인한다.
+   - `.docs/call-trees/`에 기존 문서가 있으면 그 파일을 갱신한다.
+   - `.docs/call-trees/`에는 없고 `.0_my/call-trees/`에만 있으면 기존 경로의 파일을 갱신한다.
+   - 두 위치에 모두 있으면 `.docs/call-trees/` 문서를 정본으로 갱신하고 legacy 중복 경로를 결과에 기록한다.
+   - 앞선 두 위치에는 없고 저장소 전체 탐색 구간에 하나만 있으면 해당 기존 파일을 갱신한다.
+   - 저장소 전체 탐색 구간에 후보가 여러 개면 파일을 수정하지 않고 후보 경로를 보고한다.
+   - 선순위 위치에서 정본을 확정한 뒤 발견한 후순위 동일 문서는 수정하지 않고 중복 경로로 기록한다.
+   - 기존 문서가 없을 때만 `.docs/call-trees/`에 신규 작성한다.
+   - 기존 문서를 갱신할 때는 `nodeId`, `nextNodeSequence`와 이력만 보존하고 필수 섹션 전체를 현재 소스 기준으로 다시 구성한다.
+   - 삭제되거나 범위에서 빠진 메서드와 노드는 최종 본문과 노드 요약에서 제거한다.
+8. 출력 전 `templates/calltree-output-template.md`를 처음부터 끝까지 읽고 해당 구조로 작성한다.
 
-## 서식 규칙
-- A4 세로 인쇄 기준으로 가로 폭이 과하지 않게 정리한다.
-- 한 줄 70~80자 안쪽으로 끊고, 짧은 문단과 명확한 줄바꿈을 우선한다.
-- 표는 꼭 필요한 경우에만 사용하고, 열 수를 최소화한다.
-- 표 없이 가능한 내용은 ASCII 트리, 번호 목록, 짧은 불릿으로 대체한다.
-- 문서 톤은 짧고 자연스러운 한국어를 사용한다.
+## 출력
 
-## 사용 예시
-- `calltree OrderTrxController.java`
-- `calltree OrderCancelController.java /v4/`
-- 대용량 파일(2000줄 초과)은 엔드포인트 필터 사용 권장
+- 저장 위치: `.docs/call-trees/`
+- 기본 파일명: `callTree-{ClassName}.md`
+- 필터 적용 파일명: `callTree-{ClassName}-{filter}.md`
+- 필터 slug 생성:
+  1. 앞뒤 공백과 `/`, `\\`를 제거한다.
+  2. 공백, 경로 구분자와 `[A-Za-z0-9_-]` 이외의 연속 문자를 `-` 하나로 바꾼다.
+  3. 연속된 `-`를 하나로 줄이고 앞뒤 `-`, `_`를 제거한다.
+  4. ASCII 외 문자에 의미 있는 글자나 숫자가 있으면 UTF-8 원문 SHA-256의 앞 8자를 slug 뒤에 붙인다.
+  5. 필터가 입력됐는데 slug가 비면 `filter-{hash8}` 형식을 사용한다.
+  6. 필터가 입력된 문서는 접미사를 생략하지 않는다.
+  7. 예: `/v4/`는 `v4`, `v1/order detail`은 `v1-order-detail`, `결제`는 `filter-{hash8}`, `결제-v4`는 `v4-{hash8}`로 쓴다.
+- 문서 마지막에 `## 이력관리`를 둔다.
+
+## 완료 조건
+
+- 실제 메서드명과 호출 관계가 소스와 일치한다.
+- 기본 3depth 또는 선택 심화 기준이 지켜졌다.
+- 트리와 노드 요약의 `[TC:✅]` `nodeId`, `callPath`, `callNode` 행과 중복 개수가 일치한다.
+- 각 대상과 비대상 판정 근거가 기록됐다.
+- 기존 문서를 갱신한 경우 현재 범위에서 빠진 메서드와 노드가 최종본에 남아 있지 않다.
+- 출력 템플릿의 필수 섹션과 이력관리가 포함됐다.
+
+## 이력관리
+
+- 2026-07-13: 최종 TC 판정 표현과 외부 경계 우선순위, mapper·repository를 포함한 역할 기반 노드 분류, canonical 완전 시그니처 `callNode`, 안정적인 `callPath`, 트리의 `nodeId` 표기, CallTree 계약 버전, `nextNodeSequence` 기반 nodeId 안정성, private helper 심화, legacy 호출 별칭, 혼합 비ASCII 필터 충돌 방지, 기존 문서 전체 재구성과 제3 탐색 경로 호환 규칙을 보강했다.

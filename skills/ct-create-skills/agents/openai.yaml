@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-create-skills"
-  short_description: "최소 입력을 받아 새 스킬 초안을 생성"
-  default_prompt: "Use $ct-create-skills to ask for the minimum skill inputs first, then generate a draft skill from the provided skill name and purpose. Use only $skill-name and skill-name as triggers, and keep display_name identical to the skill name."
+  short_description: "스킬 요청을 분류하고 CT 초안·반영 절차를 연결"
+  default_prompt: "Use $ct-create-skills to route this skill request, collect the minimum inputs, and distinguish draft work from file application using the system skill-creator standards."
 policy:
   allow_implicit_invocation: true

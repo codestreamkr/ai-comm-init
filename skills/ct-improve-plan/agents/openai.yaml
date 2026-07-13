@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-improve-plan"
-  short_description: "코드 근거로 개선 과제 우선순위 문서를 작성"
+  short_description: "코드 근거로 개선 과제와 우선순위 판단 문서를 작성"
   default_prompt: "Use $ct-improve-plan only when a codebase improvement roadmap or prioritized technical-debt plan is needed before implementation. Write the {project}_improve_plan.md document without changing code."
 policy:
   allow_implicit_invocation: true

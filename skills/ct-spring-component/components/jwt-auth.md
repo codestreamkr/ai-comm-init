@@ -1,5 +1,11 @@
 # JWT Auth 컴포넌트
 
+## 구성
+
+- 선행 확인과 입력 계약
+- 인증·토큰·의존성·설정 규칙
+- 기존 구현, 보안 검토와 검증
+
 ## 목적
 
 `jwt-auth`는 Spring Security 기반 JWT 인증 흐름을 구성한다.
@@ -67,8 +73,9 @@
   - `Bearer 헤더 기반 access token 인증`
   - `쿠키 WSAT 기반 access token 인증`
   - `/admin/**`는 `ADMIN`, 나머지는 인증 필요
-- URL 보호 정책이 없으면 초기 생성은 전체 허용을 기본으로 한다.
-- 기존 `SecurityConfig`가 있으면 기존 URL 정책을 먼저 읽고, 프로젝트별 대응이 필요한 항목만 보고한다.
+- 기존 `SecurityConfig`가 있으면 기존 URL 정책을 보존하고 필터 연결에 필요한 차이만 반영한다.
+- 신규 `SecurityConfig`는 공개 URL을 화이트리스트로 명시하고 그 외 요청은 인증을 기본으로 한다.
+- 공개 URL을 코드와 요청에서 확정할 수 없으면 한 번 확인한 뒤 생성한다.
 
 ## 생성 규칙
 
@@ -236,10 +243,10 @@
   - `addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)`
 - URL 정책:
   - 공개 URL은 화이트리스트로 명시한다.
-  - 초기 생성은 `anyRequest().permitAll()`을 허용한다.
-  - 보호 URL 정책이 주어지면 `authenticated()` 또는 `hasRole(...)`로 명시한다.
-  - 기존 프로젝트가 공개 API 중심이면 전체 허용을 유지하고 보호 대상만 프로젝트별로 좁게 적용한다.
-  - 인증이 필요한 API가 보이는데 전체 허용 상태이면 자동 변경하지 않고 보안 의심 항목으로 보고한다.
+  - 신규 구성은 공개 URL 뒤에 `anyRequest().authenticated()`를 적용한다.
+  - Role 정책이 주어지면 해당 URL에 `hasRole(...)` 또는 프로젝트의 기존 권한 표현을 적용한다.
+  - 기존 프로젝트가 공개 API 중심이어도 전체 허용을 새 기본값으로 만들지 않는다.
+  - 기존 전체 허용 정책은 자동으로 넓히거나 축소하지 않고 의도와 보호 대상을 보안 의심 항목으로 보고한다.
 
 ## 토큰 전달 규칙
 
@@ -303,7 +310,7 @@ JWT 인증에 필요한 의존성을 확인한다.
 - `AccountContext`가 있으면 ThreadLocal 정리와 claim 매핑만 확인한다.
 - `JwtAuthFilter`가 있으면 토큰 추출, 검증, 인증 설정, 실패 응답, `finally` 정리만 확인한다.
 - `CustomJwtUtil`이 있으면 secret 처리, claim 구성, 토큰 원문 로그 여부만 확인한다.
-- `SecurityConfig`가 있으면 필터 등록 위치와 URL 권한 정책만 확인한다.
+- `SecurityConfig`가 있으면 기존 URL 권한 정책을 보존하고 필터 등록 위치와 필요한 연결 차이만 확인한다.
 - 기존 구현이 요구 기준과 크게 다르면 자동 수정하지 않고 차이와 조치안을 먼저 안내한다.
 
 ## 보안 1차 검토 기준
@@ -317,13 +324,21 @@ JWT 인증에 필요한 의존성을 확인한다.
 - `AccountContext.clear()` 누락 여부
 - `SecurityContextHolder` 정리 필요 여부
 - 공개 URL과 보호 URL 범위
-- `anyRequest().permitAll()` 사용 의도와 프로젝트별 보호 정책 필요 여부
+- 신규 구성의 공개 URL 화이트리스트와 `anyRequest().authenticated()` 적용 여부
+- 기존 `anyRequest().permitAll()` 사용 의도와 보호 정책 필요 여부
 - CORS `allowedOrigins`, `allowCredentials` 조합
 - Cookie `httpOnly`, `secure`, `sameSite` 설정
 - refresh token을 외부 입력으로 받는 엔드포인트 여부
 - refresh token 저장소가 DB인지 Redis인지 불명확한 상태에서 자동 갱신을 구현했는지 여부
 - 설정 파일의 secret 평문 여부
 - 인증 실패 응답에 내부 예외 메시지 노출 여부
+
+## 생성 완료 게이트
+
+- 신규 `SecurityConfig`의 공개 URL 화이트리스트가 코드 또는 사용자 입력으로 확정되어 있다.
+- 공개 URL을 확정할 수 없으면 파일을 생성하지 않고 필요한 URL 패턴을 한 번 확인한다.
+- 공개 URL 뒤의 기본 정책이 `anyRequest().authenticated()`로 구성되어 있다.
+- 기존 `SecurityConfig`를 수정한 경우 기존 URL 정책을 임의로 넓히거나 축소하지 않았다.
 
 ## 검증 기준
 
@@ -356,3 +371,7 @@ JWT 인증에 필요한 의존성을 확인한다.
 - 검증 명령과 결과
 - 보안 의심 항목
 - 남은 확인 항목
+
+## 이력관리
+
+- 2026-07-13: 신규 SecurityConfig의 공개 URL 화이트리스트와 기본 인증 정책, 공개 URL 미확정 시 생성 차단, 기존 구성 보존 기준과 컴포넌트 문서 구성을 추가했다.

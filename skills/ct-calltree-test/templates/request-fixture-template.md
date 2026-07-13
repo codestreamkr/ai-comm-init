@@ -7,10 +7,11 @@
 
 적용 조건:
 
-1. 여러 테스트가 같은 header/body/payment/meta 구조를 공유할 때
-2. call-site 분기가 입력 JSON/Map에 의해 결정될 때
-3. `applyTrigger`, `isApplicable`, `executeIfApplicable` helper가 유효할 때
-4. benchmark commit이 fixture를 포함하거나, 현재 흐름이 benchmark 수준 작업일 때
+1. legacy 적합성 게이트를 통과한 `legacy-main-test` 모드
+2. `standard-unit`에서 여러 테스트가 같은 header/body/payment/meta 구조를 공유할 때
+3. call-site 분기가 입력 JSON/Map에 의해 결정될 때
+4. `applyTrigger`, `isApplicable`, `executeIfApplicable` helper가 유효할 때
+5. 프로젝트 기존 테스트가 공통 request fixture를 사용할 때
 
 fixtureStrategy 해석:
 
@@ -18,7 +19,9 @@ fixtureStrategy 해석:
   - 공통 request fixture를 먼저 만들고, helper는 꼭 필요한 최소 범위만 둔다
 - `shared-helper`
   - 공통 request fixture와 `applyXTrigger`, `executeXIfApplicable` helper를 같이 설계한다
-  - helper는 운영코드 분기 재현용으로만 쓰고, 테스트 전용 게이트를 추가하지 않는다
+  - helper의 허용 책임은 운영코드 분기 재현과 대상 호출 실행이다
+- `none`
+  - `standard-unit`에서 프로젝트 기존 테스트가 노드별 입력 생성을 사용할 때만 허용한다
 
 기본 파일:
 
@@ -44,9 +47,12 @@ private ReturnType executeSecondaryIfApplicable(Map<String, Object> reqJson) { .
 2. fixture를 쓰더라도 production endpoint 자체는 호출하지 않음
 3. helper는 운영코드 분기만 재현하고, 임의 분기를 추가하지 않음
 4. 같은 흐름 테스트가 늘어나면 fixture/helper를 우선 재사용
-5. benchmark 수준 작업이면 fixture 없이 테스트마다 입력을 새로 만드는 방식을 피한다.
+5. 같은 요청 골격을 공유하면 테스트마다 전체 입력을 새로 만들지 않는다.
 6. fixture 하나로 2개 이상 call family를 재현할 수 있게 설계한다.
 7. `shared-helper` 전략이면 helper 이름도 실제 call family가 드러나게 유지한다.
+8. negative helper의 실행과 반환 의미 검증은 `references/calltree-test-patterns.md`를 따른다.
+9. `legacy-main-test`의 UnitTest 입력은 base request에서 파생하며 전체 VO를 setter로 직접 구성하지 않는다.
+10. request JSON/Map과 base request 근거가 없는 Service, batch, message 흐름은 파일 수정 전에 `--standard-unit` 선택을 확인한다.
 
 오버로드 페어 규칙:
 
@@ -61,3 +67,7 @@ public void target_Test(Map<String, Object> reqJson) throws Exception { ... }
 
 1. MainTest가 `reqJson`을 넘겨 호출하는 경우 위 페어를 필수로 생성한다.
 2. 무파라미터 `@Test`는 파라미터 메서드로 위임한다.
+
+## 이력관리
+
+- 2026-07-13: 모드별 fixture 허용 조건, request JSON/Map 기반 legacy 적합성 게이트와 확인 기반 standard-unit 전환, legacy base request 파생 계약, helper 검증 정본 참조를 정리했다.

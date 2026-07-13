@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-init"
-  short_description: "언어별 core 3문서와 AGENTS 라우팅 정리"
-  default_prompt: "Use $ct-init to detect the project language, regenerate the core project documents, and reduce AGENTS.md to routing-only content."
+  short_description: "core 문서를 안전하게 동기화하거나 명시적으로 재생성"
+  default_prompt: "Use $ct-init to safely synchronize the core project documents and managed AGENTS.md block, using --reset only when I explicitly request full core-document regeneration."
 policy:
   allow_implicit_invocation: true

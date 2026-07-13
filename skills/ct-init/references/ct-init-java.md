@@ -1,5 +1,12 @@
 # ct-init-java
 
+## 구성
+
+- 공식 기준과 Java 프로젝트 감지
+- core 문서 공통 정책과 Java 기준
+- core 문서 3종 생성 포맷
+- AGENTS 관리 블록과 유지보수
+
 ## 공식 기준
 
 공식 문서에 있는 설정을 우선 근거로 쓴다.
@@ -21,11 +28,11 @@
   - `.docs/core_project.md`
   - `.docs/core_code_style.md`
   - `.docs/core_workflow.md`
-- `AGENTS.md`는 라우팅 전용으로 유지하고, 상세 내용은 `core_*` 3종으로 분리한다.
+- `AGENTS.md`에서는 ct-init 관리 블록만 갱신하고 기존 사용자 규칙은 보존한다.
 
 ## 사용 시점
 - 새 저장소를 세팅한 직후
-- `.docs` 문서가 없거나 초기 상태로 재생성해야 할 때
+- `.docs` 문서가 없거나 최신 기준으로 갱신해야 할 때
 - `AGENTS.md`가 비대해져 상세를 `core_*` 문서로 분리하려고 할 때
 
 ## 실행 방식
@@ -33,9 +40,11 @@
 - 아래 Markdown 포맷에 따라 파일을 직접 작성한다.
 
 ## 파일 생성 정책
-- 기본 동작은 **항상 최신 포맷으로 재생성**이다.
-- 대상 파일이 이미 있으면 덮어쓴다. 필요하면 삭제 후 재생성해도 된다.
-- 기존 내용 보존을 위한 안전 편집/부분 병합은 하지 않는다.
+- 기본 `sync`는 기존 프로젝트 기준과 이력을 보존하면서 최신 포맷으로 갱신한다.
+- 명시적 `--reset`은 기존 본문을 병합하지 않고 현재 저장소 근거와 최신 포맷으로 core 문서를 전체 재작성한다.
+- 두 모드 모두 기존 이력과 `AGENTS.md` 관리 블록 밖의 사용자 규칙은 보존한다.
+- `AGENTS.md`는 관리 블록 밖의 내용을 보존한다.
+- 실행 모드의 상세 기준은 `../SKILL.md`를 따른다.
 
 ## core 문서 메타/중복 제거 공통 규칙
 - `core_project.md`, `core_code_style.md`, `core_workflow.md`의 `문서 메타`에는 아래 항목을 항상 같은 순서로 넣는다.
@@ -87,17 +96,9 @@
 - `JAVA_HOME` 예시는 반드시 추출된 Java 버전에 맞게 작성하고, 특정 버전/경로를 고정값으로 넣지 않는다.
 
 ## AGENTS 동기화 정책
-- `AGENTS.md` 상단에 `ct-init` 관리 블록(`<!-- ct-init:core-docs:start/end -->`)을 유지한다.
-- `AGENTS.md` 제목은 `# AGENTS.md (Project Routing Only)`로 유지한다.
-- 아래 섹션은 core 문서로 이관된 중복으로 보고 AGENTS에서 제거한다.
-  - `## 프로젝트 구조 및 모듈 구성`
-  - `## 빌드, 테스트, 개발 명령`
-  - `## 코딩 스타일 및 네이밍 규칙`
-  - `## 테스트 가이드라인`
-  - `## 보안 및 설정 주의사항`
-- 중복 제거 후 `AGENTS.md`에는 라우팅 정보만 남긴다.
-- `AGENTS.md`에는 상세 정책을 추가하지 않고, 변경 시 대상 문서를 수정한 뒤 동기화 일자만 갱신한다.
-- 빌드/테스트/실행/환경 버전 판단 작업은 먼저 `.docs/core_workflow.md`를 보도록 `추가 라우팅`에 명시한다.
+- 관리 블록 동기화와 선택적 중복 정리는 `../SKILL.md`의 공통 정책을 따른다.
+- Java 규칙을 이관할 때는 구조·스타일·실행 책임에 맞는 core 문서를 선택한다.
+- 사용자 확인 전에는 core 문서와 중복된 기존 섹션도 삭제하지 않는다.
 
 ## 생성 포맷
 
@@ -249,6 +250,9 @@ flowchart LR
 ## 유지보수 메모
 - 프로젝트 특화 정보는 우선 이 문서를 업데이트한다.
 - AGENTS.md에는 중복 설명을 추가하지 않고, 본 문서 링크만 유지한다.
+
+## 이력관리
+- {GENERATED_DATE}: ct-init으로 문서 생성 또는 갱신
 ````
 
 ### 2) `.docs/core_code_style.md`
@@ -351,11 +355,14 @@ log.error("[{}][FAIL] 외부 연동 실패 - requestDate: {}, uuid: {}", jobName
 ## 문서 운영 규칙
 - 코드 리뷰에서 반복 지적되는 스타일 이슈를 본 문서에 우선 반영한다.
 - 팀 합의가 생기면 AGENTS.md가 아니라 본 문서를 먼저 갱신한다.
+
+## 이력관리
+- {GENERATED_DATE}: ct-init으로 문서 생성 또는 갱신
 ````
 
 ### 3) `.docs/core_workflow.md`
 
-```markdown
+````markdown
 # {PROJECT_NAME} 개발 워크플로우 가이드
 
 ## 문서 메타
@@ -426,31 +433,23 @@ mvn clean package -P {PROFILE_NAME} -Dspring.profiles.active={PROFILE_NAME}
 ## 문서 운영 규칙
 - 신규 운영 절차나 배포 규칙은 AGENTS.md가 아니라 본 문서에 먼저 반영한다.
 - AGENTS.md에는 본 문서 경로 링크와 라우팅 정보만 유지한다.
-```
 
-### 4) `AGENTS.md` 라우팅 템플릿
+## 이력관리
+- {GENERATED_DATE}: ct-init으로 문서 생성 또는 갱신
+````
 
-```markdown
-# AGENTS.md (Project Routing Only)
+### 4) `AGENTS.md` Java 확장
 
-<!-- ct-init:core-docs:start -->
-## Core 문서 참조 (ct-init 관리)
-- 프로젝트 구조/모듈 상세: `.docs/core_project.md`
-- 코딩 스타일/네이밍 상세: `.docs/core_code_style.md`
-- 빌드/테스트/운영 상세: `.docs/core_workflow.md`
-- AGENTS.md는 라우팅 전용으로 유지하고, 상세 규칙은 위 문서에서 관리한다.
-- 마지막 동기화: {GENERATED_DATE}
-<!-- ct-init:core-docs:end -->
+공통 관리 블록은 `../SKILL.md`의 `공통 AGENTS 템플릿`을 그대로 사용한다.
 
-## 추가 라우팅
-- 빌드/테스트/실행/환경 버전 판단이 필요한 작업은 먼저 `.docs/core_workflow.md`를 확인한다.
-- 도메인 AS-IS 문서: `.docs/api_asis_*.md`
-
-## 운영 원칙
-- 본 문서에는 상세 정책을 추가하지 않는다.
-- 규칙/절차 변경은 대상 문서를 수정하고 동기화 일자만 갱신한다.
-```
+- `.docs/api_asis_*.md`가 있으면 공통 관리 블록의 core 문서 링크 다음에 해당 도메인 API AS-IS 문서를 함께 확인하는 규칙을 한 줄 추가한다.
+- 공통 빌드·테스트·실행·환경 버전 라우팅은 이 reference에 반복하지 않는다.
+- 기존 `AGENTS.md` 제목과 관리 블록 밖의 규칙은 공통 동기화 정책에 따라 보존한다.
 
 ## 유지보수
 - Java 계열 생성 포맷은 이 reference에서 관리한다.
 - 공통 라우팅과 언어 감지 기준은 `../SKILL.md`를 따른다.
+
+## 이력관리
+
+- 2026-07-13: AGENTS 동기화와 확인형 중복 정리를 공통 정책으로 일원화하고 sync/reset 생성 모드와 Java 도메인 문서 라우팅을 정리했다.

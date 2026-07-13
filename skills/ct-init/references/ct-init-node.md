@@ -2,6 +2,13 @@
 
 Node.js 또는 TypeScript 프로젝트의 core 문서 3종을 생성한다.
 
+## 구성
+
+- 공식 기준과 프로젝트 감지
+- 런타임, 패키지 매니저와 TypeScript 판정
+- core 문서 3종 생성 포맷
+- 확인 필요 처리
+
 ## 공식 기준
 
 공식 문서에 있는 설정을 우선 근거로 쓴다.
@@ -148,7 +155,7 @@ TypeScript 사용 여부와 엄격도는 설정 파일로 판단한다.
 
 ## core_project.md 생성 포맷
 
-```markdown
+````markdown
 # {PROJECT_NAME} 프로젝트
 
 ## 문서 메타
@@ -247,7 +254,10 @@ flowchart TD
 ## 유지보수 메모
 - 구조 변경은 이 문서를 먼저 갱신한다.
 - 실행/검증 절차는 `.docs/core_workflow.md`에만 기록한다.
-```
+
+## 이력관리
+- {GENERATED_DATE}: ct-init으로 문서 생성 또는 갱신
+````
 
 ## core_code_style.md 생성 포맷
 
@@ -305,11 +315,14 @@ flowchart TD
 2. 런타임 코드와 타입/스키마 위치가 분리되어 있는가?
 3. 오류 응답과 로그가 프로젝트 형식과 맞는가?
 4. 테스트가 변경된 경계를 검증하는가?
+
+## 이력관리
+- {GENERATED_DATE}: ct-init으로 문서 생성 또는 갱신
 ```
 
 ## core_workflow.md 생성 포맷
 
-```markdown
+````markdown
 # {PROJECT_NAME} 개발 워크플로우
 
 ## 문서 메타
@@ -368,7 +381,10 @@ flowchart TD
 
 ## 실패 대응 기준
 {FAILURE_RESPONSE}
-```
+
+## 이력관리
+- {GENERATED_DATE}: ct-init으로 문서 생성 또는 갱신
+````
 
 ## 확인 필요 처리
 
@@ -378,3 +394,7 @@ flowchart TD
 - 패키지 매니저 충돌: 충돌 파일과 권장 확인 항목 기록
 - scripts 누락: package.json에 없는 명령은 추정하지 않음
 - 프레임워크 감지 충돌: 감지된 근거와 제외한 후보를 기록
+
+## 이력관리
+
+- 2026-07-13: core 문서 생성 템플릿의 이력관리 규칙과 문서 구성을 정리했다.

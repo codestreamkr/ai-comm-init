@@ -1,5 +1,12 @@
 # 스크립트 생성 기준
 
+## 구성
+
+- 요청 범위와 프로젝트 감지
+- 환경별 실행 명령과 OS별 스크립트
+- env와 Docker Compose
+- 검증과 결과 보고
+
 ## 기준
 
 프로젝트의 실제 실행 방식을 기준으로 스크립트를 만든다.
@@ -23,6 +30,17 @@
 - Python: `pyproject.toml`, `requirements.txt`, `uv.lock`, `Pipfile`
 - Docker: `Dockerfile`, `docker-compose.yml`, `compose.yaml`
 - 공통: `Makefile`, `.env.example`, `.docs/core_workflow.md`, `AGENTS.md`
+
+### core_workflow 명령 대조
+
+실행 명령은 프로젝트 설정과 문서가 일치하는지 확인한 뒤 선택한다.
+
+1. 기존 환경별 `scripts/*`, launcher와 `Makefile` target에서 프로젝트가 사용 중인 실행 진입점을 찾는다.
+2. 빌드 파일, package script, wrapper와 lockfile에서 해당 진입점이 호출하는 task·script·산출물이 유효한지 확인한다.
+3. `.docs/core_workflow.md`와 README의 명령을 대조한다.
+4. 기존 launcher가 유효하면 launcher 명령을 유지하고, 삭제된 task나 존재하지 않는 산출물을 호출하면 빌드 설정으로 바로잡는다.
+5. 실행 진입점과 설정 또는 문서가 충돌하면 선택 근거와 차이를 결과에 기록한다.
+6. 문서 갱신 요청이 없으면 `core_workflow.md`는 변경하지 않는다.
 
 ## 2. 미정의 언어 처리
 
@@ -105,7 +123,10 @@
 
 ### 공통 기준
 
-- 기존 `scripts/*`, `Makefile`, README, `.docs/core_workflow.md`에 실행 명령이 있으면 그 명령을 우선한다.
+- 기존 환경별 `scripts/*`, launcher와 `Makefile` target을 실행 진입점으로 우선 확인한다.
+- 빌드 파일, package script, wrapper와 lockfile로 진입점의 유효성을 확인한다.
+- launcher가 유효하면 기존 명령을 유지하고, 유효하지 않으면 빌드 설정에 존재하는 명령을 선택한다.
+- README와 `.docs/core_workflow.md`는 선택한 명령과 정합성을 대조한다.
 - package script, Gradle task, Maven goal이 여러 개 있으면 환경 역할에 맞는 명령을 선택한다.
 - 실행 명령이 불명확하면 임의로 조합하지 않고 필요한 값만 사용자에게 묻는다.
 
@@ -184,6 +205,17 @@ Env:
 - 필요 시 서비스 준비 대기
 - 앱 서버 foreground 실행
 
+### 앱 프로세스 lifecycle
+
+앱 로그와 종료 상태는 스크립트를 실행한 터미널에 연결한다.
+
+- 호스트에서 앱을 실행하면 마지막 foreground 프로세스로 실행하고 종료 코드를 그대로 반환한다.
+- Docker 앱 서비스는 `docker compose up --exit-code-from <app-service> <app-service>`로 foreground 실행하고 선택한 앱 서비스의 종료 코드를 스크립트 결과로 전달한다.
+- Docker 의존 서비스만 앱 실행 전에 detached로 시작할 수 있다.
+- 중단 신호가 들어오면 앱 프로세스 또는 앱 컨테이너가 함께 종료되도록 구성한다.
+- `--exit-code-from`이 시작한 의존 서비스의 종료·정리 범위는 해당 환경의 `down` 책임과 일치시킨다.
+- 앱 로그는 별도 파일이나 background job으로 보내지 않고 현재 터미널에 출력한다.
+
 예시:
 
 ```sh
@@ -231,6 +263,8 @@ set -euo pipefail
 - 주석, 빈 줄, 잘못된 키 이름은 건너뛴다.
 - env 파일을 shell 스크립트로 실행하지 않는다.
 - 서버 실행은 foreground 명령으로 끝난다.
+- 서버 실행에 `nohup` 또는 `&` background 실행을 사용하지 않는다.
+- Docker 앱 실행에 `-d` 또는 `--detach`를 사용하지 않는다.
 - `chmod +x scripts/*.sh`를 적용한다.
 
 ### `.sh` 필수 구성
@@ -259,6 +293,7 @@ $ErrorActionPreference = "Stop"
 - env 파일은 주석과 빈 줄을 건너뛰고 process 환경변수로 로드한다.
 - 서버 실행은 foreground 명령으로 끝난다.
 - `Start-Job`, `Start-Process`는 서버 실행에 사용하지 않는다.
+- Docker 앱 실행에 `-d` 또는 `--detach`를 사용하지 않는다.
 
 ### `.ps1` 필수 구성
 
@@ -367,7 +402,9 @@ volumes:
 - Docker 의존 서비스 구성 여부
 - 수행한 검증
 - 사용자가 채워야 할 env 키
+- 프로젝트 설정과 `core_workflow.md`의 명령 차이
 
 ## 이력관리
 
+- 2026-07-13: launcher·Makefile·빌드 설정의 실행 명령 우선순위, core_workflow 대조 절차, Docker 앱 foreground 로그·종료 코드 전달과 background 실행 차단 기준을 정리했다.
 - 2026-07-08: 요청 범위, env 값, Compose 종료 기준, 실행 명령 선택, 스크립트 필수 구성을 추가했다.

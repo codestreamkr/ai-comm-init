@@ -1,109 +1,99 @@
-# CallTree Test Patterns
+# CallTree 테스트 패턴
 
-이 문서는 `ct-calltree-test`의 세부 패턴 전용 reference다.
-워크플로우, 완료 기준, benchmark 처리는 `SKILL.md`를 따르고, 이 문서는 이름/로그/helper/fixture/체크리스트만 다룬다.
+이 문서는 테스트 이름, 분기, fixture와 검증 패턴을 정한다. 실행 순서와 완료 조건은 `SKILL.md`를 따른다.
 
-## 1. 외부 조건 vs 내부 조건
+## 조건 분류
 
 ### 외부 조건
-- 호출자(controller, 상위 service, helper)의 분기에서 대상 메서드 호출 자체를 막는 조건
-- 외부 조건이 false이면 대상 메서드는 실행되지 않는다
-- 이 경우만 `..._NoCall` 이름을 쓴다
+
+호출자 분기가 대상 메서드 호출 자체를 막는 조건이다.
+
+- 허용 이름: 대상 메서드가 실행되지 않은 경우의 `..._NoCall`
+- 근거 위치: 대상 메서드를 호출하는 Controller, Service 또는 helper
 
 ### 내부 조건
-- 대상 메서드 본문에 진입한 뒤 내부 service/DAO/side effect 실행을 막는 조건
-- 대상 메서드는 호출되므로 `NoCall`을 쓰지 않는다
-- 내부에서 생략되는 내용을 이름에 드러낸다
 
-## 2. 테스트 이름 상세 패턴
+대상 메서드에 진입한 뒤 하위 호출이나 부수효과를 생략하는 조건이다.
 
-- 성공 기본 케이스: `xxx_Test()`
-- 외부 조건 미충족: 이유가 분명하면 `NotApplicable_NoCall`보다 구체 이름을 선호
-  - 예: `checkKCP_PaymentTypeMismatch_NoCall`
-- 내부 하위 호출 미발생: `NoServiceCall`, `NoStockSideEffect`, `NoExtraLookup`
-- 예외 삼킴: `insertHistory_InsertException_LogsErrorAndReturnsDto`
-- 필요도 낮음 메모:
-  `참고: 현재 운영코드 기준으로는 단순 조회/위임 성격이 강하지만, CallTree 기준 대상이므로 회귀 확인용으로 유지한다.`
+- 허용 이름: `NoServiceCall`, `Skip`, `NoSideEffect`
+- 근거 위치: 대상 메서드 본문
 
-피해야 할 이름:
-- 실제 사유가 있는데도 무조건 `NotApplicable_NoCall`
-- 운영코드에 없는 외부 조건을 helper에 추가한 이름
-- 실제로는 메서드가 호출되는데 `NoCall`로 끝나는 이름
+## 테스트 이름
 
-## 3. 로그 패턴
+기존 프로젝트 명명 규칙을 우선한다. 별도 규칙이 없으면 아래 형식을 사용한다.
 
-### 호출 직전
-- production method 호출 직전에 반드시 `[➡️ CALL]`
+| 유형 | 형식 |
+|---|---|
+| 정상 | `{methodName}_Test` |
+| 외부 조건 미충족 | `{methodName}_{reason}_NoCall` |
+| 내부 호출 생략 | `{methodName}_{reason}_NoServiceCall` |
+| 예외 결과 | `{methodName}_{exception}_{result}` |
 
-```java
-log.info("[DOMAIN_TEST][TARGET_METHOD][➡️ CALL] service.targetMethod(arg1={}, arg2={}) 호출 직전",
-        arg1, arg2);
-```
+실제 조건을 확인할 수 있으면 `NotApplicable` 같은 포괄 이름보다 구체적인 사유를 사용한다.
 
-### 단계 로그
-- 내부 로직이 있으면 단계 의미가 드러나는 로그를 남긴다
-- 대표 태그: `[BASE_MAPPING]`, `[DTO_MAPPING]`, `[REQUEST_PARAM]`, `[SUM]`, `[NO_SERVICE_CALL]`, `[EXPECTED_ERROR_LOG]`
+## 테스트 범위
 
-### negative 케이스
-- helper 실행 후 미호출/내부 미호출 결과가 로그만으로도 드러나야 한다
+각 노드는 아래 허용 경로 중 실제 코드에서 확인한 경로를 모두 검증한다.
 
-## 4. helper / fixture 세부 패턴
+- 정상 경로
+- 호출자가 실제로 가진 미호출 경로
+- 대상 메서드가 실제로 가진 내부 skip 또는 예외 경로
+- 변경되는 상태, 전달값 또는 부수효과
 
-### helper 규칙
-1. helper는 실제 호출 구조를 재현하기 위한 최소 범위로만 만든다.
-2. helper 안에 운영코드에 없는 외부 게이트를 새로 만들지 않는다.
-3. negative 케이스도 가능하면 helper를 실제로 실행한다.
-4. helper가 `null`, `emptyList`, `0` 등을 반환하는 경우 그 의미가 운영코드 분기와 맞아야 한다.
+`legacy-main-test` 모드의 정상·negative·예외 전체 경로 계약은 `references/test-strategy.md`를 따른다.
 
-좋은 예:
-- `executeLookupIfApplicable(req)`가 조건 미충족 시 `null`
+## Mock과 assertion
 
-나쁜 예:
-- 운영 메서드는 항상 호출되는데 helper가 임의로 호출을 차단
+- 프로젝트의 기존 mocking 프레임워크와 초기화 방식을 따른다.
+- 단순 위임은 호출 여부와 핵심 인자를 검증한다.
+- mapping과 조립은 captor 또는 동등한 방식으로 전달값을 검증한다.
+- 예외 삼킴은 테스트 이름, Javadoc 또는 로그에 의도된 처리임을 표시하고 반환값, 후속 호출, 상태 변화 또는 로그 중 관찰 가능한 결과를 검증한다.
+- Controller 고유 private helper는 public 경계로 결과를 관찰할 수 없는 경우 `ReflectionTestUtils.invokeMethod()`로 검증할 수 있다.
+- Controller 고유 로직은 해당 분기나 helper를 직접 검증하며 전체 엔드포인트 호출로 우회하지 않는다.
+- `layer=external`은 외부 메서드 자체가 아니라 경계를 직접 소유한 저장소 내부 caller 또는 wrapper에서 호출 인자, 반환 처리와 실제 예외 경로를 검증한다.
 
-### 시그니처 페어 규칙
+## 로그
 
-MainTest가 `reqJson`을 넘겨 UnitTest 메서드를 호출하면 아래 페어를 필수로 유지한다.
+- `standard-unit`: 기존 프로젝트 테스트 로그 형식을 적용한다.
+- `legacy-main-test`: 모든 `@Test`에 `[TAG][STEP]` 형식과 운영 메서드 호출 직전 `[➡️ CALL]` 로그를 적용한다.
+- 로그 필드는 프로젝트의 허용 목록과 마스킹 기준에서 선택한다.
 
-```java
-@Test
-public void method_Test() throws Exception {
-    method_Test(TestResourceLoader.loadOrderCreateBase());
-}
+## Fixture
 
-public void method_Test(Map<String, Object> reqJson) throws Exception {
-    // assert/verify
-}
-```
+테스트 모드에서 허용한 fixture 전략을 사용한다.
 
-- `method_Test(Map<String, Object>)`만 있고 무파라미터 `@Test`가 없으면 미완성이다.
-- 반대로 무파라미터 `@Test`만 있고 MainTest가 파라미터 호출하면 미완성이다.
-- `_NoCall`, `_NoServiceCall`, `_Throws*` 케이스도 동일하게 페어를 맞춘다.
+- 기본 위치: `src/test/resources/{domain}/{entrypoint}/base-request.json`
+- `legacy-main-test`: legacy 적합성 게이트를 통과한 request JSON/Map 흐름의 모든 UnitTest 입력을 base request에서 파생한다.
+- `standard-unit`: 같은 요청 골격을 여러 노드가 공유하거나 프로젝트 기존 테스트가 fixture를 사용할 때 공통 fixture를 사용한다.
+- 테스트별 차이는 공통 fixture에서 필요한 값만 변경한다.
+- helper는 실제 운영 분기를 재현하는 입력 변환과 호출 실행만 담당한다.
 
-### 재탐색 정지 조건
-아래가 확보되면 더 깊게 내려가지 않는다:
+### Helper 검증
+
+- negative 케이스도 `isApplicable=false` 확인만으로 끝내지 않고 `executeXIfApplicable` 같은 허용 helper를 실제 실행한다.
+- helper가 `null`, 빈 컬렉션, `0` 같은 기본값을 반환하면 그 값이 운영 코드의 미호출·생략·기본값 의미와 일치하는지 assertion으로 확인한다.
+- 외부 미호출은 대상 메서드가 호출되지 않았음을 검증하고, 내부 skip은 대상 메서드 진입 후 하위 호출·부수효과가 생략됐음을 구분해 검증한다.
+- 기본값 assertion만으로 끝내지 않고 금지된 하위 호출이나 상태 변경이 없었는지도 실제 코드 계약에 따라 확인한다.
+- 운영 메서드가 항상 호출되는 흐름에 helper가 임의의 호출 차단 조건을 추가하지 않는다.
+- helper의 이름은 실제 call family와 실행 책임이 드러나게 작성한다.
+
+### 예외 삼킴 검증
+
+- 실제 catch 대상이 되는 의존성 예외를 mock에서 발생시킨다.
+- 운영 코드가 예외를 삼키는 계약일 때만 호출이 예외를 전파하지 않는다고 검증한다.
+- 반환 기본값, 입력·기존 상태 유지, 후속 호출, 보상 호출, 저장 생략 중 실제 코드에 있는 관찰 가능한 결과를 하나 이상 assertion으로 닫는다.
+- 로그를 계약으로 검증할 수 있는 프로젝트에서는 의도된 error 로그를 확인한다. 로그 캡처 기반이 없으면 로그 확인만으로 테스트를 완료하지 않는다.
+- catch 이후 금지되는 하위 호출이나 부수효과가 있으면 미발생을 함께 검증한다.
+
+## 추적 완료 조건
+
+아래가 모두 확인되면 노드의 소스 추적을 완료한다.
+
 1. 대상 메서드 호출 여부를 검증할 수 있다.
-2. 주요 파라미터 매핑을 assertion으로 표현할 수 있다.
-3. 내부 skip/default/예외 branch를 테스트 이름과 검증으로 닫을 수 있다.
-4. 최종 side effect 또는 후처리 결과가 확인된다.
+2. 주요 전달값을 assertion으로 표현할 수 있다.
+3. 실제 skip·예외 분기를 검증할 수 있다.
+4. 최종 상태 변화 또는 부수효과를 확인할 수 있다.
 
-## 5. 자주 틀리는 패턴
+## 이력관리
 
-1. MainTest는 파라미터 호출인데 UnitTest 오버로드 페어가 없는 상태
-2. `NotApplicable_NoCall` 남발
-3. negative 케이스가 `applicable=false`만 보고 끝남
-4. 예외 삼킴 테스트인데 error 로그가 의도된 것임이 이름/Javadoc/로그에 안 드러남
-5. 같은 엔드포인트 흐름인데 fixture 없이 테스트마다 입력 구조를 흩어 씀
-6. CallTree와 실제 코드가 충돌하는데 스킬이 독자적으로 대상을 제외하거나 추가
-
-## 6. 최종 체크리스트
-
-1. 외부 조건을 실제 호출자에서 찾았는가
-2. 내부 조건을 대상 메서드 본문에서 찾았는가
-3. negative 케이스가 helper 실행까지 포함하는가
-4. 이름이 실제 사유를 드러내는가
-5. `[➡️ CALL]` 로그가 production method 직전에 있는가
-6. 내부 로직이 있으면 단계 로그가 있는가
-7. 메인 테스트와 문서까지 동기화했는가
-8. 필요도 낮음 판단이 있으면 테스트는 생성했고 메모도 남겼는가
-9. 같은 흐름을 여러 테스트가 공유하면 fixture/helper가 정리됐는가
+- 2026-07-13: 모드별 fixture 허용 기준, legacy 적합성 게이트, 실제 존재하는 모든 negative·예외 경로, negative helper 실행과 미호출·생략 반환 의미, 예외 삼킴의 비전파·관찰 결과, Controller 직접 검증과 external caller·wrapper 검증 기준을 복원했다.

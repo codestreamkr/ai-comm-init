@@ -14,7 +14,7 @@ description: 프로젝트 언어와 실행 방식을 감지해 macOS/Linux용 sh
 1. 프로젝트 실행 방식을 확인한다.
 2. 기존 스크립트와 Docker 구성을 확인한다.
 3. 환경별 스크립트 책임을 정한다.
-4. `sh`와 `ps1`을 같은 책임으로 생성하거나 갱신한다.
+4. 요청 범위에 `sh`와 `ps1`이 함께 포함되면 같은 책임으로 생성하거나 갱신한다.
 5. env 예시 파일을 생성하거나 갱신한다.
 6. 요청된 Docker 의존 서비스를 Compose에 반영한다.
 7. 가능한 검증을 수행하고 실행 명령을 보고한다.
@@ -28,6 +28,20 @@ description: 프로젝트 언어와 실행 방식을 감지해 macOS/Linux용 sh
 - Node.js: `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`
 - Java/Spring: `pom.xml`, `build.gradle`, `gradlew`, `mvnw`
 - Python: `pyproject.toml`, `requirements.txt`, `uv.lock`, `Pipfile`
+
+## 실행 명령 정합성
+
+스크립트 명령은 실행 가능한 프로젝트 설정을 기준으로 확정한다.
+
+- 우선 근거:
+  1. 기존 환경별 실행 스크립트, launcher와 Makefile target
+  2. 빌드 파일, package script, wrapper와 lockfile
+  3. `.docs/core_workflow.md`와 README
+- 기존 launcher나 Makefile 명령이 빌드 설정에 존재하는 task·script·산출물과 연결되면 해당 launcher 명령을 유지한다.
+- 기존 launcher가 삭제된 task나 존재하지 않는 산출물을 호출하면 빌드 설정으로 실행 명령을 바로잡고 차이를 보고한다.
+- 선택한 명령을 `.docs/core_workflow.md`의 설치·빌드·테스트·실행 명령과 대조한다.
+- 문서와 실행 가능한 설정이 다르면 설정을 기준으로 스크립트를 만들고 차이를 보고한다.
+- `core_workflow.md` 수정은 사용자가 문서 갱신까지 요청한 경우에만 수행한다.
 
 ## 미정의 언어 처리
 
@@ -69,60 +83,20 @@ Docker 의존 서비스를 요청받으면 기존 Compose 파일을 갱신하거
 - `compose.yaml`
 - `docker-compose.yml`
 
-## 명령 기준
+## 핵심 실행 계약
 
-각 환경 스크립트는 `up`과 `down`을 기본 명령으로 제공한다.
+생성 파일은 같은 실행 계약을 따른다.
 
-- `up`: env를 로드하고 의존 서비스를 실행한 뒤 서버 애플리케이션을 foreground로 실행한다.
-- `down`: Docker 의존 서비스와 Docker 기반 실행 요소를 종료한다.
-
-아무 명령도 받지 않으면 사용법을 안내하고 종료한다.
-
-- 기본 명령 목록을 출력한다.
-- 예시 실행 명령을 출력한다.
-- 현재 스크립트가 참조하는 env 파일을 안내한다.
-- 앱 서버나 Docker 서비스를 자동 실행하지 않는다.
-
-`app` 명령은 기본으로 만들지 않는다.
-
-- `up`이 앱 서버 foreground 실행을 포함한다.
-- 앱만 따로 실행해야 하는 요구가 명확할 때만 `app` 또는 `run`을 추가한다.
-
-선택 명령은 필요할 때만 만든다.
-
-- `status`: Docker 서비스 상태와 포트 상태를 확인한다.
-- `logs`: Docker 의존 서비스 로그를 확인한다.
-- `check`: env, Docker, 런타임, 앱 실행 명령을 점검한다.
-
-## 서버 실행 기준
-
-서버 애플리케이션은 foreground로 실행한다.
-
-- `nohup`, `&`, `Start-Job`, `Start-Process`로 서버를 background 실행하지 않는다.
-- 앱 로그는 현재 터미널에 출력한다.
-- 스크립트 종료는 앱 프로세스 종료와 연결한다.
-- Docker 의존 서비스만 `docker compose up -d`로 background 실행할 수 있다.
-- 앱 자체가 Docker 서비스이면 사용자가 명시하지 않는 한 foreground로 실행한다.
-
-## Docker 의존 서비스 기준
-
-사용자가 명시한 서비스만 구성한다.
-
-- PostgreSQL
-- Redis
-- MySQL
-- MariaDB
-- MongoDB
-- Elasticsearch
-- Kafka
-- RabbitMQ
-
-상태 저장 서비스는 named volume을 사용한다.
-
-- 로컬 기본 포트는 env로 분리한다.
-- 비밀값은 실제 값으로 만들지 않는다.
-- 운영용 Compose는 사용자가 명시한 경우에만 만든다.
-- `prod` 스크립트는 로컬 Docker 의존 서비스를 자동 실행하지 않는다.
+- 기본 명령은 `up`, `down`이다.
+- `up`은 앱 서버를 foreground로 실행한다.
+- Docker로 앱을 실행해도 앱 서비스에는 detached 옵션을 사용하지 않고 로그를 현재 터미널에 연결한다.
+- Docker 앱 서비스의 종료 코드를 스크립트 결과로 전달할 때 `docker compose up --exit-code-from <app-service> <app-service>` 형식을 사용한다.
+- 스크립트의 종료 상태와 중단 신호는 앱 프로세스 또는 앱 컨테이너의 lifecycle과 연결한다.
+- 빈 인자는 사용법과 env 경로만 출력한다.
+- Docker 의존 서비스는 사용자가 요청한 서비스만 구성한다.
+- 상태 저장 서비스는 named volume을 사용한다.
+- 실제 비밀값은 env 예시에 넣지 않는다.
+- `prod`는 로컬 Docker 의존 서비스를 자동 실행하지 않는다.
 
 ## 세부 생성 기준
 
@@ -132,14 +106,17 @@ Docker 의존 서비스를 요청받으면 기존 Compose 파일을 갱신하거
 
 작업 완료 전에 아래를 확인한다.
 
-- `local`, `dev`, `prod`의 책임이 분리되어 있다.
-- `.sh`와 `.ps1`이 같은 명령 책임을 제공한다.
-- `up`은 앱 서버를 foreground로 실행한다.
-- `down`은 Docker 의존 서비스를 종료한다.
-- env 예시 파일에는 필요한 키만 포함되어 있다.
-- 실제 비밀값은 포함되어 있지 않다.
-- 가능한 범위에서 문법 검증을 수행했다.
+- 사용자가 요청한 파일, 환경, OS만 생성·수정했다.
+- 여러 환경이 범위에 포함되면 각 환경의 책임이 분리되어 있다.
+- `.sh`와 `.ps1`이 함께 범위에 포함되면 같은 명령 책임을 제공한다.
+- OS가 하나만 지정되면 해당 OS 스크립트만 완료 대상으로 판정한다.
+- 앱 실행 스크립트의 `up`은 서버를 foreground로 실행한다.
+- Docker 구성이 범위에 포함되면 `down` 종료 대상이 요청 서비스로 제한된다.
+- env 예시에는 범위에 필요한 키만 있고 실제 비밀값은 없다.
+- 선택한 실행 명령을 프로젝트 설정과 `core_workflow.md`에 대조했다.
+- 요청 범위의 파일에 가능한 문법·구성 검증을 수행했다.
 
 ## 이력관리
 
+- 2026-07-13: 세부 생성 기준을 workflow 정본으로 모으고 요청 범위 기반 완료 조건, launcher·Makefile·빌드 설정의 실행 명령 우선순위와 Docker 앱 foreground·종료 코드 lifecycle 기준을 추가했다.
 - 2026-07-08: 요청 범위 우선 생성 기준을 추가했다.
