@@ -152,6 +152,25 @@ description: API, DB, 스키마, 상태 모델, 처리 흐름, 데이터 계약 
 - 외부 연동 테스트는 `external-architect`가 정한 시나리오와 계약을 적용한다.
 - Spring 테스트는 `spring`이 정한 테스트 계층과 구현 방식을 적용한다.
 
+### 외부 연동 테스트 3세트
+
+외부 연동이 변경되고 테스트가 요청된 경우 세 경계의 필요성을 각각 판단한다. 세 파일을 일괄 생성하지 않는다.
+
+| 테스트 경계 | 실행할 운영 코드 | 대체 경계 | 검증 목적 |
+|---|---|---|---|
+| 실제 연동 Integration | 실제 외부 Client와 HTTP 전송 | Service와 DB 제외 | 실제 인증, endpoint와 요청·응답 계약 |
+| 외부 Client Unit | 실제 외부 Client | HTTP 전송만 Fake | URL, headers, body, 멱등 키와 응답 변환 |
+| Service Unit | 실제 Service | 외부 Client와 저장 계층 Mock | 업무 검증, 상태 전이, 저장, 보상과 복구 |
+
+- 프로젝트 관례가 맞으면 `*ExternalApiIntegrationTest`, `*ExternalApiClientUnitTest`, `*ServiceUnitTest` 이름을 사용한다.
+- 외부 계약만 변경되면 외부 Client Unit을 우선하고 실제 환경 검증이 필요하면 Integration을 추가한다.
+- 업무 규칙, 저장 또는 보상 흐름이 변경되면 Service Unit을 사용한다.
+- 두 책임이 함께 변경되면 외부 Client Unit과 Service Unit을 각각 둔다.
+- 실제 연동 Integration은 유효한 인증, endpoint와 테스트 데이터가 준비된 경우에만 실행한다.
+- Fake와 Mock은 테스트 대상 밖의 경계만 대체하고 테스트 대상 운영 코드는 실제로 실행한다.
+- 하드코딩한 성공값을 반환하고 같은 값만 확인하는 테스트는 작성하지 않는다.
+- 기존 테스트가 같은 운영 책임을 검증하면 새 파일을 만들지 않고 유지하거나 필요한 케이스만 보완한다.
+
 ### 테스트 실행과 실패 처리
 
 - 변경에 직접 관련된 테스트부터 실행한다.
