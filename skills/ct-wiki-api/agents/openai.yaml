@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-wiki-api"
+  short_description: "환경변수 기반 Wiki API로 위키를 검색·조회·저장"
+  default_prompt: "Use $ct-wiki-api to search for Wiki page 333."
+policy:
+  allow_implicit_invocation: false

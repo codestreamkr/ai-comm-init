@@ -1,6 +1,6 @@
 ---
 name: ct-calltree-test
-description: "`ct-calltree` 문서의 `[TC:✅]` 노드를 실제 Java 소스와 대조해 단위 테스트, fixture, MainTest와 검증 보고를 만든다. 사용자가 `$ct-calltree-test`, `ct-calltree-test`, legacy `/ct:calltreeTest`, CallTree 기반 테스트 작성 또는 `[TC:✅]` 노드 테스트 구현을 요청할 때 사용한다."
+description: "`ct-calltree` 문서의 `[TC:✅]` 노드를 실제 Java 소스와 대조해 단위 테스트, fixture, MainTest와 검증 보고를 만든다. 사용자가 `$ct-calltree-test`를 명시적으로 호출한 경우에만 사용한다."
 ---
 
 # CT CallTree Test
@@ -10,7 +10,6 @@ CallTree는 대상 범위를 제공하고 실제 운영 코드는 테스트 조�
 ## 입력
 
 - `$ct-calltree-test <calltree-path> [target-call] [--standard-unit] [--parallel] [--benchmark <commit>]`
-- legacy `/ct:calltreeTest <calltree-path> [target-call]`도 같은 입력 규칙으로 처리한다.
 - 허용 옵션:
   - `--standard-unit`: MainTest 산출물을 만들지 않는 프로젝트 표준 단위 테스트 모드. 초기 입력에 명시하거나 legacy 부적합 보고 뒤 사용자가 선택할 수 있다.
   - `--parallel`: 서로 다른 테스트 파일의 노드를 Agent로 병렬 처리
@@ -187,4 +186,5 @@ CallTree는 대상 범위를 제공하고 실제 운영 코드는 테스트 조�
 
 ## 이력관리
 
+- 2026-07-23: `$ct-calltree-test` 명시 호출만 허용하고 legacy 호출 별칭을 제거했다.
 - 2026-07-13: legacy CallTree와 호출 별칭, 제3 탐색 경로 처리, nodeId·legacy 임시 식별자·canonical callPath·완전 시그니처 target-call 선택, 입력 오류 일괄 확인, legacy benchmark 표현 호환과 commit 검증, contractVersion 2의 `nodeId + callPath + callNode` 행·중복 개수 검증, repository 계층, `nextNodeSequence` 기반 nodeId 안정성, external caller·wrapper 테스트 매핑, 모든 실제 negative·예외 경로와 예외 삼킴 의미 검증, legacy 적합성 차단과 확인 기반 standard-unit 전환, 병렬 Agent 인계·반환 계약, 기존 테스트 복제와 과도한 호출망 추적 차단 기준을 정리했다.

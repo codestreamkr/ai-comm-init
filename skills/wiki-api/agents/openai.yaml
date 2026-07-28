@@ -1,5 +1,0 @@
-display_name: wiki-api
-short_description: 환경변수 기반 Wiki API로 검색하고 조회한다.
-default_prompt: $wiki-api 333 검색해줘.
-when_to_use: $wiki-api, wiki-api, 위키 API, 컨플루언스 검색, 위키 검색 요청에 사용한다.
-

@@ -24,7 +24,7 @@
 1. 환경 감지에서 Boot 버전, 웹 계층 구조, 공통 응답/예외 처리 방식을 먼저 확인
 2. 기존 Controller, DTO, `@ControllerAdvice` 한두 개를 읽고 프로젝트의 API 계약을 파악
 3. 데이터 접근이 얽히면 Service 뒤가 JPA인지 MyBatis인지 확인하고 해당 레퍼런스로 이어갈 준비를 한다
-4. MyBatis가 붙고 SQL 자체가 복잡하거나 성능 이슈가 보이면 `query-tuner` 관점 검증까지 염두에 둔다
+4. MyBatis가 붙고 SQL 자체가 복잡하거나 성능 이슈가 보이면 `ct-query-tuner` 관점 검증까지 염두에 둔다
 
 이 절차를 건너뛰면 URL은 맞아도 검증 메시지, 응답 포맷, 상태 코드가 프로젝트 기준과 어긋난다.
 
@@ -52,7 +52,7 @@
 
 **연계 기준**
 - 데이터 접근 구현이 필요하면 JPA 또는 MyBatis 레퍼런스로 이어간다
-- MyBatis와 연결된 SQL이 복잡하거나 성능 검토가 필요하면 `query-tuner` 관점으로 확장한다
+- MyBatis와 연결된 SQL이 복잡하거나 성능 검토가 필요하면 `ct-query-tuner` 관점으로 확장한다
 - 어떤 레퍼런스를 거치더라도 최종 응답 계약과 서비스 흐름 정리는 다시 `spring` 에이전트가 맡는다
 
 ---
@@ -181,7 +181,7 @@ public class GlobalExceptionHandler {
 ### MyBatis로 이어질 때
 
 - Mapper 결과를 어떤 DTO로 받을지, count/목록 쿼리를 어떻게 맞출지 정리
-- SQL 자체가 길거나 조인이 많고 정렬/인덱스 부담이 보이면 `query-tuner` 관점으로 확장
+- SQL 자체가 길거나 조인이 많고 정렬/인덱스 부담이 보이면 `ct-query-tuner` 관점으로 확장
 
 MVC는 끝까지 잡되, 데이터 접근 구현 세부는 해당 레퍼런스를 붙여 완성한다.
 

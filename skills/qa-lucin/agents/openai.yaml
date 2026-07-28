@@ -3,4 +3,4 @@ interface:
   short_description: "풀스택 관점으로 QA 위험과 테스트 전략 판단"
   default_prompt: "$qa-lucin을 사용해 이 기능을 풀스택 QA 관점으로 검토하고, 계층별 위험과 필요한 테스트 기술을 판단한 뒤 적절한 테스트 전략으로 진행해줘."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

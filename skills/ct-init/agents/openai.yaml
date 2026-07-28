@@ -3,4 +3,4 @@ interface:
   short_description: "core 문서를 안전하게 동기화하거나 명시적으로 재생성"
   default_prompt: "Use $ct-init to safely synchronize the core project documents and managed AGENTS.md block, using --reset only when I explicitly request full core-document regeneration."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

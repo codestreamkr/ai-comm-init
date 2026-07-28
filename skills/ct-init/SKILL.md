@@ -1,6 +1,6 @@
 ---
 name: ct-init
-description: "저장소 초기화 직후 프로젝트 언어와 런타임을 감지해 `.docs/core_project.md`, `core_code_style.md`, `core_workflow.md`를 안전하게 동기화하거나 명시적 `--reset`으로 최신 근거에서 재생성하고, `AGENTS.md`의 ct-init 관리 블록을 동기화한다. 사용자가 명시하면 중복 상세 규칙을 확인 후 core 문서로 이관·정리한다. Java, Node.js/TypeScript, Python, Generic 프로젝트를 지원한다."
+description: "프로젝트 언어와 런타임을 감지해 core 문서와 `AGENTS.md`의 ct-init 관리 블록을 안전하게 동기화하거나 `--reset`으로 재생성한다. 사용자가 `$ct-init`을 명시적으로 호출한 경우에만 사용한다."
 ---
 
 # CT Init
@@ -240,4 +240,5 @@ description: "저장소 초기화 직후 프로젝트 언어와 런타임을 감
 
 ## 이력관리
 
+- 2026-07-23: `$ct-init` 명시 호출만 허용하도록 호출 정책을 변경했다.
 - 2026-07-13: 기본 sync와 명시적 reset 모드, 현재 저장소와 빌드·실행 설정의 확인된 근거를 우선하는 sync 병합 순서, 충돌하지 않는 프로젝트 고유 규칙 보존과 충돌 갱신 이력·결과 보고, AGENTS 안전 동기화, 손상·중복 마커 복구, 동일 날짜 이력 병합, 사용자 확인형 중복 정리와 공통 core_workflow 우선 확인 규칙을 추가했다.

@@ -1,6 +1,6 @@
 # Oracle Tuning Reference
 
-`query-tuner`가 Oracle로 판단했을 때만 이 문서를 읽는다.
+`ct-query-tuner`가 Oracle로 판단했을 때만 이 문서를 읽는다.
 
 ## 필수 조회 쿼리
 

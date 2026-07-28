@@ -3,4 +3,4 @@ interface:
   short_description: "CallTree 기준 Java 테스트와 MainTest 산출물 생성"
   default_prompt: "Use $ct-calltree-test to read this CallTree document and generate Java tests and an audit. Generate MainTest artifacts only when the legacy compatibility gate passes; otherwise stop before edits and ask me to confirm --standard-unit."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

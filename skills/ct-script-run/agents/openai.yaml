@@ -3,4 +3,4 @@ interface:
   short_description: "요청한 환경과 OS의 실행 스크립트와 env 예시 생성"
   default_prompt: "Use $ct-script-run to create the requested environment and OS scripts, required env examples, and only the requested Docker dependencies."
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false

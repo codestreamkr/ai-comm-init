@@ -1,6 +1,0 @@
-interface:
-  display_name: "Claude to Codex"
-  short_description: "클로드 문서를 찾아 원문 기준으로 Codex로 변환"
-  default_prompt: "Use $claude-to-codex when I explicitly mention Claude or 클로드 and ask to bring over a Claude agent or skill into Codex-compatible files."
-policy:
-  allow_implicit_invocation: true

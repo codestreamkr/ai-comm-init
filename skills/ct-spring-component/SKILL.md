@@ -1,6 +1,6 @@
 ---
 name: ct-spring-component
-description: 사용자가 `ct-spring-component` 또는 `$ct-spring-component`를 명시해 호출할 때 사용한다. 컴포넌트 이름이 없으면 지원 목록을 보여주고, `ct-spring-component service-log`처럼 이름이 있으면 미리 정의된 Spring 컴포넌트 묶음을 프로젝트 컨벤션에 맞춰 추가하고 적용 지점까지 반영한다.
+description: 미리 정의된 Spring 컴포넌트 묶음을 프로젝트 컨벤션에 맞춰 추가하고 적용 지점까지 반영한다. 사용자가 `$ct-spring-component`를 명시적으로 호출한 경우에만 사용한다.
 ---
 
 # CT Spring Component
@@ -9,7 +9,7 @@ description: 사용자가 `ct-spring-component` 또는 `$ct-spring-component`를
 
 이 스킬은 Spring 프로젝트에 정해진 컴포넌트 묶음을 추가한다.
 
-- 호출 형식: `ct-spring-component <component-name>`
+- 호출 형식: `$ct-spring-component <component-name>`
 - 현재 허용 컴포넌트: `service-log`, `jwt-auth`, `exception-handler`, `api-response`
 - 자동 문맥 호출은 사용하지 않는다.
 - 컴포넌트별 상세 규칙은 `components/<component-name>.md`를 따른다.
@@ -19,10 +19,8 @@ description: 사용자가 `ct-spring-component` 또는 `$ct-spring-component`를
 명시 호출만 처리한다.
 
 - 허용 호출:
-  - `ct-spring-component`
-  - `$ct-spring-component`
-  - `ct-spring-component <component-name>`
-  - `$ct-spring-component <component-name>`
+- `$ct-spring-component`
+- `$ct-spring-component <component-name>`
 - 허용 component-name: `service-log`, `jwt-auth`, `exception-handler`, `api-response`
 - 컴포넌트 이름 없이 호출하면 목록만 출력하고 중단한다.
 - 명령어 없이 자연어만 있는 요청은 처리하지 않는다.
@@ -151,4 +149,5 @@ description: 사용자가 `ct-spring-component` 또는 `$ct-spring-component`를
 
 ## 이력관리
 
+- 2026-07-23: `$ct-spring-component` 명시 호출만 허용하고 `$` 없는 호출 형식을 제거했다.
 - 2026-07-13: bare 호출의 컴포넌트 목록 동작, legacy core 문서 조회 fallback, 공통 완료 조건과 스킬 자체 검토 안전 규칙을 추가하고 service-log 전용 적용 규칙을 component 문서 책임으로 분리했다.

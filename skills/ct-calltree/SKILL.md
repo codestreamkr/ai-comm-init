@@ -1,6 +1,6 @@
 ---
 name: ct-calltree
-description: Java Controller 또는 Service의 호출 관계를 분석해 3depth CallTree와 최종 `[TC:✅]` 테스트 대상을 문서로 만든다. 사용자가 `$ct-calltree`, `ct-calltree`, legacy `/ct:calltree`, `calltree`, Java 호출 흐름 분석, CallTree 생성 또는 테스트 대상 호출 판정을 요청할 때 사용한다.
+description: Java Controller 또는 Service의 호출 관계를 분석해 3depth CallTree와 최종 `[TC:✅]` 테스트 대상을 문서로 만든다. 사용자가 `$ct-calltree`를 명시적으로 호출한 경우에만 사용한다.
 ---
 
 # CT CallTree
@@ -11,7 +11,7 @@ Java 진입점의 의미 있는 호출 흐름과 테스트 대상 호출을 실�
 
 - Java 파일 경로 또는 클래스명
 - 선택 입력: 메서드명, 엔드포인트, 분석 필터
-- legacy 호출인 `/ct:calltree`, `calltree`도 같은 입력 규칙으로 처리한다.
+- 호출 형식: `$ct-calltree <Java 파일 경로 또는 클래스명> [메서드명 또는 엔드포인트]`
 - 파일명만 주어지면 저장소에서 찾고 후보가 여러 개일 때만 기준 클래스를 묻는다.
 
 ## 분석 범위
@@ -202,4 +202,5 @@ getter/setter, 로깅, 단순 컬렉션 조작, DTO 필드 설정, 범용 라이
 
 ## 이력관리
 
+- 2026-07-23: `$ct-calltree` 명시 호출만 허용하고 일반·legacy 호출 별칭을 제거했다.
 - 2026-07-13: 최종 TC 판정 표현과 외부 경계 우선순위, mapper·repository를 포함한 역할 기반 노드 분류, depth 2 본문과 private helper의 의미 있는 직접 호출을 depth 3에 기록하는 기준, canonical 완전 시그니처 `callNode`, 안정적인 `callPath`, 트리의 `nodeId` 표기, CallTree 계약 버전, `nextNodeSequence` 기반 nodeId 안정성, private helper 심화, legacy 호출 별칭, 혼합 비ASCII 필터 충돌 방지, 기존 문서 전체 재구성과 제3 탐색 경로 호환 규칙을 보강했다.

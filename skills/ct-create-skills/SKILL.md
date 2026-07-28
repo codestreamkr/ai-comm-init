@@ -1,6 +1,6 @@
 ---
 name: ct-create-skills
-description: 새 스킬 생성, 초안, 템플릿, 기존 스킬 패턴 복제나 개선을 요청할 때 사용한다. 사용자가 `$ct-create-skills`, `ct-create-skills`, CT 방식 적용을 명시하거나 스킬명·호출명·목적을 바탕으로 스킬을 만들려는 경우 CT wrapper에서 초안과 파일 반영 권한을 구분한 뒤 시스템 `skill-creator` 절차로 연결한다.
+description: 새 스킬 생성, 초안, 템플릿, 기존 스킬 패턴 복제나 개선 요청을 CT wrapper에서 분류하고 시스템 `skill-creator` 절차로 연결한다. 사용자가 `$ct-create-skills`를 명시적으로 호출한 경우에만 사용한다.
 ---
 
 # CT Create Skills
@@ -13,11 +13,8 @@ description: 새 스킬 생성, 초안, 템플릿, 기존 스킬 패턴 복제�
 
 | 요청 | 담당 절차 | 권한 판정 |
 |---|---|---|
-| `$ct-create-skills`, `ct-create-skills`, CT 방식 적용 요청 | 이 스킬의 CT wrapper 후 시스템 `skill-creator` | `작업 권한` 기준 |
-| 일반적인 새 스킬 생성·초안·템플릿 요청 | 기존 호출 호환을 위해 CT wrapper 후 시스템 `skill-creator` | `작업 권한` 기준 |
-| 기존 스킬 패턴 복제·개선 요청 | 이 스킬의 CT wrapper 후 시스템 `skill-creator` | `작업 권한` 기준 |
+| `$ct-create-skills <요청 내용>` | 이 스킬의 CT wrapper 후 시스템 `skill-creator` | `작업 권한` 기준 |
 
-- 시스템 `skill-creator`가 직접 선택된 일반 요청도 이 wrapper의 `작업 권한` 기준을 먼저 적용한다.
 - CT wrapper는 최소 입력 수집, CT 패턴 판단, 권한 확인만 담당한다.
 - 실제 생성 구조, 파일 작성, `agents/openai.yaml`, 검증은 시스템 `skill-creator` 절차를 따른다.
 
@@ -54,7 +51,7 @@ CT wrapper 요청에서 스킬명, 호출명, 목적이 아직 주어지지 않�
 ## 입력 해석
 
 - 스킬명: 디렉터리명, frontmatter `name`, 기본 `$스킬명` 호출에 사용
-- 호출명: description에 포함할 추가 자연어 트리거
+- 호출명: `$스킬명` 형식의 명시 호출명
 - 목적: 적용 범위, 제외 범위, 입력, 출력, 실행 흐름 판단에 사용
 
 목적에서 아래를 추출한다.
@@ -81,6 +78,12 @@ CT wrapper 요청에서 스킬명, 호출명, 목적이 아직 주어지지 않�
 | 허용 목록으로 선택하는 동적 컴포넌트 | `components/<component-name>.md` | 컴포넌트별 실행 계약 |
 
 `agents/`에는 UI 메타데이터인 `agents/openai.yaml`만 둔다. 실행 지식은 `references/`, 결정적 자동화는 `scripts/`, 출력에 사용하는 원본은 `assets/`에 둔다.
+
+CT 스킬의 호출 정책은 다음 값으로 고정한다.
+
+- `description`: 사용자가 `$스킬명`을 명시적으로 호출한 경우에만 사용한다고 적는다.
+- `agents/openai.yaml`: `policy.allow_implicit_invocation`을 `false`로 설정한다.
+- 일반 업무 요청, `$` 없는 스킬명과 legacy 명령은 호출 조건에 포함하지 않는다.
 
 ## 동적 컴포넌트 허용 목록
 
@@ -165,4 +168,5 @@ CT wrapper 요청에서 스킬명, 호출명, 목적이 아직 주어지지 않�
 
 ## 이력관리
 
+- 2026-07-23: `$ct-create-skills` 명시 호출만 허용하고 자연어·일반 스킬 요청의 자동 라우팅을 제거했으며 CT 스킬의 명시 호출·implicit invocation 차단 기준을 추가했다.
 - 2026-07-13: 기존 자연어 호출 호환과 시스템 skill-creator 역할 분리·source locator 기준 참조, 명시적 반영 동사와 적용 대상을 함께 확인하는 작업 권한, 표준 resource 구조, 동적 컴포넌트 표기와 허용 목록, Git ref 대비 전체 계약·UI 메타데이터 변경 검사, 참조·Git 추적·agents 구조 검증 순서를 정리했다.

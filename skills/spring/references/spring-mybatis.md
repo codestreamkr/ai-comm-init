@@ -64,10 +64,10 @@
 6. **정렬·필터 안전성 확인** — 문자열 조립으로 raw SQL을 붙이지 않는지 확인
 7. **조인 결과 확인** — DTO 필드가 비면 alias / `resultMap` / nullable 컬럼 순으로 점검
 
-### query-tuner 연계 기준
+### ct-query-tuner 연계 기준
 
 - Mapper/XML 구조, 동적 SQL, `resultMap`, count 쿼리 정리는 이 레퍼런스에서 먼저 본다
-- SQL이 길어지거나 조인이 많고, 실행 계획·인덱스·정렬 비용까지 판단해야 하면 `query-tuner` 관점으로 이어서 검증한다
+- SQL이 길어지거나 조인이 많고, 실행 계획·인덱스·정렬 비용까지 판단해야 하면 `ct-query-tuner` 관점으로 이어서 검증한다
 - 튜닝 검토 결과를 반영해 최종 Mapper 구조와 Spring 코드 흐름을 정리하는 단계는 다시 `spring` 에이전트가 맡는다
 
 ---

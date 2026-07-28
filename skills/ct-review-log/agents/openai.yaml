@@ -1,0 +1,7 @@
+interface:
+  display_name: "ct-review-log"
+  short_description: "여러 언어의 로그 수준과 메시지 품질을 검토합니다"
+  default_prompt: "$ct-review-log로 지정한 클래스나 메서드의 로그 수준과 품질을 검토해 주세요."
+
+policy:
+  allow_implicit_invocation: false

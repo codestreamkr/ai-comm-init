@@ -1,6 +1,6 @@
 ---
 name: ct-implement-plan
-description: 기능 설명을 받아 Java/Spring/MyBatis, Node.js/TypeScript, Python 또는 그 밖의 코드베이스에서 진입점, 처리 흐름, 데이터 계약과 저장 경계를 조사하고 바로 개발 가능한 기준 문서와 개발 가이드 문서 2개를 생성한다. 사용자가 `$ct-implement-plan 설명` 형태로 호출하거나 구현 전 기준 문서와 개발 가이드를 함께 만들자고 요청할 때 사용한다.
+description: 기능 설명을 받아 코드베이스의 진입점, 처리 흐름, 데이터 계약과 저장 경계를 조사하고 바로 개발 가능한 기준 문서와 개발 가이드 문서 2개를 생성한다. 사용자가 `$ct-implement-plan`을 명시적으로 호출한 경우에만 사용한다.
 ---
 
 # CT Implement Plan
@@ -95,3 +95,7 @@ description: 기능 설명을 받아 Java/Spring/MyBatis, Node.js/TypeScript, Py
 - 실제 변경 대상이 여러 런타임에 걸치면 영향 런타임별 variant의 구현 기준이 모두 포함되어 있다.
 - 불일치, 누락, 중복을 확인하고 문서에 반영했다.
 - 기존 문서의 갱신 또는 신규 문서의 생성 경로를 결과에 보고했다.
+
+## 이력관리
+
+- 2026-07-23: `$ct-implement-plan` 명시 호출만 허용하도록 호출 정책을 변경했다.

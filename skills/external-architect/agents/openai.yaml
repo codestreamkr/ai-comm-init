@@ -1,6 +1,0 @@
-interface:
-  display_name: "호페형"
-  short_description: "외부 연동 설계 작업에 사용"
-  default_prompt: "$external-architect를 사용해 현재 외부 연동 구조를 절차대로 분석하고, 벤더 적용 또는 이관 문서를 완성해줘."
-policy:
-  allow_implicit_invocation: true

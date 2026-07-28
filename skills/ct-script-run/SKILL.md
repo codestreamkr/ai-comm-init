@@ -1,6 +1,6 @@
 ---
 name: ct-script-run
-description: 프로젝트 언어와 실행 방식을 감지해 macOS/Linux용 sh, Windows용 ps1 시작 스크립트, env 예시 파일, 요청된 Docker 의존 서비스 구성을 만든다. 사용자가 `$ct-script-run`, `ct-script-run`, local/dev/prod 실행 스크립트 생성, scripts/local.sh 생성, PowerShell 실행 스크립트 생성, Docker Compose로 PostgreSQL/Redis 같은 로컬 의존 서비스 구성을 요청할 때 사용한다.
+description: 프로젝트 언어와 실행 방식을 감지해 macOS/Linux용 sh, Windows용 ps1 시작 스크립트, env 예시 파일과 요청된 Docker 의존 서비스 구성을 만든다. 사용자가 `$ct-script-run`을 명시적으로 호출한 경우에만 사용한다.
 ---
 
 # ct-script-run
@@ -118,5 +118,6 @@ Docker 의존 서비스를 요청받으면 기존 Compose 파일을 갱신하거
 
 ## 이력관리
 
+- 2026-07-23: `$ct-script-run` 명시 호출만 허용하도록 호출 정책을 변경했다.
 - 2026-07-13: 세부 생성 기준을 workflow 정본으로 모으고 요청 범위 기반 완료 조건, launcher·Makefile·빌드 설정의 실행 명령 우선순위와 Docker 앱 foreground·종료 코드 lifecycle 기준을 추가했다.
 - 2026-07-08: 요청 범위 우선 생성 기준을 추가했다.

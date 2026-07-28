@@ -1,6 +1,6 @@
 ---
 name: ct-tran-plan
-description: 특정 메서드, Controller API, Service 또는 배치 진입점의 현재 호출 흐름을 분석해 AS-IS/TO-BE CallTree, 구조 판단, 서비스 책임, 메서드 매핑을 담은 전환 계획 문서를 만든다. 사용자가 `$ct-tran-plan`, `ct-tran-plan`, 전환 계획·전환계획, 특정 메서드 기준 전환 문서, AS-IS/TO-BE CallTree 문서 또는 구조 변경 기준 문서를 요청할 때 사용한다.
+description: 특정 메서드, Controller API, Service 또는 배치 진입점의 현재 호출 흐름을 분석해 AS-IS/TO-BE CallTree, 구조 판단, 서비스 책임과 메서드 매핑을 담은 전환 계획 문서를 만든다. 사용자가 `$ct-tran-plan`을 명시적으로 호출한 경우에만 사용한다.
 ---
 
 # CT Transition Plan
@@ -106,4 +106,5 @@ description: 특정 메서드, Controller API, Service 또는 배치 진입점�
 
 ## 이력관리
 
+- 2026-07-23: `$ct-tran-plan` 명시 호출만 허용하고 자연어 호출 조건을 제거했다.
 - 2026-07-13: 자연어 호출 표현, 완전한 시그니처 기반 대상 확인, core 문서의 `.docs` 우선·`.0_my` 읽기 fallback, base package 확정 여부에 따른 경로 표기, 변경 요청이 없는 계약 보존과 사용자 목표 계약 전파, source path·FQCN·완전 시그니처의 SHA-256 기반 충돌 회피 파일 식별자, `component` 접두사, legacy 다중 경로 후보 수집과 대상 동일성 검증, 근거 부재의 `확인 필요` 판정, 필수 목표 CallTree와 전환 계획 파일의 신규 생성·기존 갱신 기준을 정리했다.

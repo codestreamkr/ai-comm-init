@@ -1,9 +1,9 @@
 ---
-name: wiki-api
-description: "환경변수 기반 Wiki API 작업을 수행한다. Confluence REST API 호환 위키를 검색, 조회, 원문 저장, 제한적 수정할 때 사용한다. 사용자가 `$wiki-api`, `wiki-api`, `위키 API`, `컨플루언스 검색`, `위키 검색`처럼 요청하면 사용한다. 예: `$wiki-api 333 검색해줘.`, `$wiki-api page 123456 조회해줘.`"
+name: ct-wiki-api
+description: "환경변수 기반 Wiki API로 Confluence REST API 호환 위키를 검색, 조회, 원문 저장, 제한적으로 수정한다. 사용자가 `$ct-wiki-api`를 명시적으로 호출한 경우에만 사용한다."
 ---
 
-# wiki-api
+# ct-wiki-api
 
 이 스킬은 환경변수 값에 따라 대상 Wiki API를 호출한다.
 
@@ -38,8 +38,8 @@ description: "환경변수 기반 Wiki API 작업을 수행한다. Confluence RE
 
 스킬 폴더의 스크립트를 직접 사용한다.
 
-- API 스크립트: `C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1`
-- env 샘플: `C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api-env.ps1`
+- API 스크립트: `C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1`
+- env 샘플: `C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api-env.ps1`
 - 현재 프로젝트의 `scripts/wiki-api.ps1` 존재 여부는 실행 기준으로 삼지 않는다.
 - env 샘플 파일은 자동으로 읽지 않는다.
 - 환경변수 확인은 `check-env` 명령으로 수행하고, 값 출력 없이 설정 여부만 확인한다.
@@ -107,7 +107,7 @@ description: "환경변수 기반 Wiki API 작업을 수행한다. Confluence RE
 환경변수 확인은 전용 명령으로만 수행한다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' check-env
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' check-env
 ```
 
 - 출력은 환경변수명과 설정 여부만 포함한다.
@@ -118,14 +118,14 @@ description: "환경변수 기반 Wiki API 작업을 수행한다. Confluence RE
 
 입력값을 먼저 판별한 뒤 가장 직접적인 방식으로 처리한다.
 
-- `$wiki-api 333 검색해줘.`: page id `333` 조회
-- `$wiki-api https://...pageId=333 검색해줘.`: URL에서 page id `333` 추출 후 조회
-- `$wiki-api https://.../display/MSN/정산 검색해줘.`: Space와 제목을 추출해 검색
-- `$wiki-api [커머스] 직영몰 PG 고도화 검색해줘.`: 특수문자 제거 후 제목 검색
-- `$wiki-api 정산 검색해줘.`: 제목 검색 후 본문 검색
-- `$wiki-api page 123456 조회해줘.`: page id `123456` 조회
-- `$wiki-api page 123456 저장해줘.`: page id `123456` 원문 저장
-- `$wiki-api page 123456 수정해줘.`: 수정 의도를 확인하고 dry-run부터 실행
+- `$ct-wiki-api 333 검색해줘.`: page id `333` 조회
+- `$ct-wiki-api https://...pageId=333 검색해줘.`: URL에서 page id `333` 추출 후 조회
+- `$ct-wiki-api https://.../display/MSN/정산 검색해줘.`: Space와 제목을 추출해 검색
+- `$ct-wiki-api [커머스] 직영몰 PG 고도화 검색해줘.`: 특수문자 제거 후 제목 검색
+- `$ct-wiki-api 정산 검색해줘.`: 제목 검색 후 본문 검색
+- `$ct-wiki-api page 123456 조회해줘.`: page id `123456` 조회
+- `$ct-wiki-api page 123456 저장해줘.`: page id `123456` 원문 저장
+- `$ct-wiki-api page 123456 수정해줘.`: 수정 의도를 확인하고 dry-run부터 실행
 
 ## 검색 절차
 
@@ -189,13 +189,13 @@ text ~ "커머스" and text ~ "직영몰" and text ~ "고도화"
 입력값 판별과 단계별 검색은 `smart-search`로 수행한다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' smart-search -Query '[커머스] 직영몰 PG 고도화'
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' smart-search -Query '[커머스] 직영몰 PG 고도화'
 ```
 
 Space를 사용자가 명시한 경우에만 `-Space`를 붙인다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' smart-search -Query '정산' -Space 'MSN'
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' smart-search -Query '정산' -Space 'MSN'
 ```
 
 ## 조회 절차
@@ -203,25 +203,25 @@ Space를 사용자가 명시한 경우에만 `-Space`를 붙인다.
 페이지 조회는 page id를 기준으로 수행한다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-page -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-page -PageId 123456
 ```
 
 페이지 관련 정보도 page id를 기준으로 조회한다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-comments -PageId 123456
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-attachments -PageId 123456
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-child-pages -PageId 123456
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-descendant-pages -PageId 123456
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-labels -PageId 123456
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-history -PageId 123456
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-restrictions -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-comments -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-attachments -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-child-pages -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-descendant-pages -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-labels -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-history -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-restrictions -PageId 123456
 ```
 
 페이지와 관련 정보를 한 번에 확인할 때는 묶음 조회를 사용한다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' get-page-bundle -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' get-page-bundle -PageId 123456
 ```
 
 ## 저장 절차
@@ -229,8 +229,8 @@ Space를 사용자가 명시한 경우에만 `-Space`를 붙인다.
 원문 저장은 `WIKI_API_RAW_DIR`에 JSON으로 저장한다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' save-page -PageId 123456
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' save-comments -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' save-page -PageId 123456
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' save-comments -PageId 123456
 ```
 
 ## 생성 절차
@@ -244,8 +244,8 @@ Space를 사용자가 명시한 경우에만 `-Space`를 붙인다.
 - 사용자가 실제 생성을 명시하면 `-Write`를 붙인다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' create-page -ParentId 123456 -Title '새 페이지 제목' -BodyFile .\work\page-body.html
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' create-page -ParentId 123456 -Title '새 페이지 제목' -BodyFile .\work\page-body.html -Write
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' create-page -ParentId 123456 -Title '새 페이지 제목' -BodyFile .\work\page-body.html
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' create-page -ParentId 123456 -Title '새 페이지 제목' -BodyFile .\work\page-body.html -Write
 ```
 
 ## 수정 절차
@@ -258,7 +258,7 @@ Space를 사용자가 명시한 경우에만 `-Space`를 붙인다.
 - 사용자가 실제 반영을 명시하면 `-Write`를 붙인다.
 
 ```powershell
-& 'C:\Users\P268083\.codex\skills\wiki-api\scripts\wiki-api.ps1' update-page -PageId 123456 -BodyFile .\work\page-body.html
+& 'C:\Users\P268083\.codex\skills\ct-wiki-api\scripts\wiki-api.ps1' update-page -PageId 123456 -BodyFile .\work\page-body.html
 ```
 
 ## 출력

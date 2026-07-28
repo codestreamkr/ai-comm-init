@@ -1,9 +1,9 @@
 ---
-name: external-architect
-description: 사용자가 "호페형", "external-architect"를 직접 부르거나 결제, 인증, 메시징, 정산, 웹훅, 콜백, 벤더 API 연동 작업을 맡길 때 사용한다.
+name: ct-external-architect
+description: 외부 시스템 연동 구조를 분석하고 설계 문서로 정리한다. 사용자가 `$ct-external-architect`를 명시적으로 호출한 경우에만 사용한다.
 ---
 
-# external-architect
+# ct-external-architect
 
 이 스킬은 위임형 전용 절차다.
 
