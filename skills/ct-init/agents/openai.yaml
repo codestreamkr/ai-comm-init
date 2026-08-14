@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-init"
-  short_description: "core 문서를 안전하게 동기화하거나 명시적으로 재생성"
-  default_prompt: "Use $ct-init to safely synchronize the core project documents and managed AGENTS.md block, using --reset only when I explicitly request full core-document regeneration."
+  short_description: "README와 AI 작업 시작 규칙을 안전하게 동기화"
+  default_prompt: "Use $ct-init to synchronize the project README and the managed AGENTS.md block while preserving existing development-environment setup."
 policy:
   allow_implicit_invocation: false
