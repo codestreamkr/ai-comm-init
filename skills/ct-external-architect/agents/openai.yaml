@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-external-architect"
-  short_description: "외부 연동 구조와 벤더 적용·이관 문서를 설계"
-  default_prompt: "Use $ct-external-architect to analyze the current external integration structure and complete the vendor adoption or migration document."
-policy:
-  allow_implicit_invocation: false

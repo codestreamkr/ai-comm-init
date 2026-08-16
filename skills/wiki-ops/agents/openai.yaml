@@ -1,6 +1,0 @@
-interface:
-  display_name: "wiki-ops"
-  short_description: "Markdown 위키 조회와 운영 작업을 실행"
-  default_prompt: "Use $wiki-ops with an action such as init, search, ingest, log, daily, verify, lint, or prune."
-policy:
-  allow_implicit_invocation: true

@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-implement-plan"
-  short_description: "기술 스택별 코드 근거로 구현 문서 2종 생성"
-  default_prompt: "Use $ct-implement-plan to inspect this project's stack and create paired implementation criteria and developer-guide documents."
-policy:
-  allow_implicit_invocation: false

@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-implement"
-  short_description: "영향 범위가 큰 구현을 전파·기본 검증까지 처리"
-  default_prompt: "Use $ct-implement to implement this cross-layer change, run the language-appropriate production-code validation, and create and run tests only when I explicitly request testing."
-policy:
-  allow_implicit_invocation: false

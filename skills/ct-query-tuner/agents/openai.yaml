@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-query-tuner"
-  short_description: "근본 원인 중심으로 SQL 튜닝 방향을 정리"
-  default_prompt: "Use $ct-query-tuner to analyze this query problem, identify the root cause, and recommend the least invasive tuning approach."
-policy:
-  allow_implicit_invocation: false

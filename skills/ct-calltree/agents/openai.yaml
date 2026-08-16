@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-calltree"
-  short_description: "Java 호출 흐름과 TC 대상을 분석하는 스킬"
-  default_prompt: "Use $ct-calltree to analyze this Java controller or service and generate a CallTree with final [TC:✅] decisions."
-policy:
-  allow_implicit_invocation: false

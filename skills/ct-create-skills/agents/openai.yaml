@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-create-skills"
-  short_description: "스킬 요청을 분류하고 CT 초안·반영 절차를 연결"
-  default_prompt: "Use $ct-create-skills to route this skill request, collect the minimum inputs, and distinguish draft work from file application using the system skill-creator standards."
-policy:
-  allow_implicit_invocation: false
