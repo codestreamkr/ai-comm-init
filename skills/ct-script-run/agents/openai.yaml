@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-script-run"
+  short_description: "현재 프로젝트 구성에 맞는 실행 스크립트 생성·검증"
+  default_prompt: "$ct-script-run ? 로 필요한 입력과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

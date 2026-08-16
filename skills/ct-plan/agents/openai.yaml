@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-plan"
+  short_description: "프로젝트 근거 기반 제품·설계·구현·개선 계획 작성"
+  default_prompt: "$ct-plan ? 로 작업과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

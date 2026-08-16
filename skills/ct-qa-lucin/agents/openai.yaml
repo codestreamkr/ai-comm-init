@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-qa-lucin"
+  short_description: "프로젝트 기능 흐름과 테스트 환경을 기반으로 QA 수행"
+  default_prompt: "$ct-qa-lucin ? 로 필요한 입력과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-wiki-ops"
+  short_description: "프로젝트 규칙에 따른 Markdown 위키 운영과 품질 점검"
+  default_prompt: "$ct-wiki-ops ? 로 작업과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

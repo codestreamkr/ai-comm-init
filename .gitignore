@@ -1,18 +1,14 @@
-# 기본값: 모든 파일 제외
+# 기본값: 프로젝트 배포 파일만 추적
 *
 
-# 저장소 메타/문서
 !.gitignore
 !README.md
-!install.ps1
+!config.user.toml
 !install.sh
-
-# 노션 정의 파일
-!AGENTS.md
+!install.ps1
 !skills/
 !skills/**
-skills/.system/
-skills/.system/**
-config.toml
-.git_backup_*
 
+# Skill에 추가될 수 있는 로컬 비밀값 제외
+skills/**/.env
+skills/**/.env.*

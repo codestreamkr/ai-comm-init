@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-external-architect"
+  short_description: "프로젝트와 공식 자료를 근거로 외부 서비스 연동·이관 설계"
+  default_prompt: "$ct-external-architect ? 로 사용법과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

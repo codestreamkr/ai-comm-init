@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-wiki-api"
+  short_description: "PowerShell 도구 기반 Wiki API 조회·저장·변경"
+  default_prompt: "$ct-wiki-api ? 로 작업과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

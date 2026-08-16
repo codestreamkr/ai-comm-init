@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-query-tuner"
+  short_description: "현재 DB 환경과 실행 근거를 기반으로 SQL 성능 개선"
+  default_prompt: "$ct-query-tuner ? 로 필요한 입력과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false
