@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-init"
-  short_description: "README와 AI 작업 시작 규칙을 안전하게 동기화"
-  default_prompt: "Use $ct-init to synchronize the project README and the managed AGENTS.md block while preserving existing development-environment setup."
-policy:
-  allow_implicit_invocation: false
