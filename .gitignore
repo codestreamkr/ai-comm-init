@@ -12,3 +12,6 @@
 # Skill에 추가될 수 있는 로컬 비밀값 제외
 skills/**/.env
 skills/**/.env.*
+
+# 시스템/도구 생성 디렉터리 제외
+skills/**/.system/
