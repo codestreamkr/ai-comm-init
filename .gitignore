@@ -6,8 +6,15 @@
 !config.user.toml
 !install.sh
 !install.ps1
+!claude/
+!claude/**
+!codex/
+!codex/**
 !skills/
 !skills/**
+
+# macOS 메타데이터 제외
+**/.DS_Store
 
 # Skill에 추가될 수 있는 로컬 비밀값 제외
 skills/**/.env
