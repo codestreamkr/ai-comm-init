@@ -40,7 +40,7 @@ Claude Code에 요청한다.
 
 Codex CLI에 요청한다.
 
-> `~/.agents/codex/config.toml` 내용을 `~/.codex/config.toml`에 병합해줘. 기존 설정은 유지해줘.
+> `~/.agents/codex`의 설정을 검토하고 `~/.codex`에 병합·적용해줘. 기존 설정은 유지해줘.
 
 ## 4. 최신 정보 갱신
 
