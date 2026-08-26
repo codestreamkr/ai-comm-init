@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-docs-impl"
+  short_description: "소스 코드와 기술 자료 기반의 구현 문서 작성·통합·갱신"
+  default_prompt: "$ct-docs-impl을 사용해 지정한 코드와 기술 자료를 검증하고 간결한 구현 문서로 통합해 주세요."
+policy:
+  allow_implicit_invocation: false
