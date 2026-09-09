@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-docs-impl"
   short_description: "개발에 필요한 구현 문서만 작성·통합·갱신"
-  default_prompt: "$ct-docs-impl을 사용해 지정한 코드와 기술 자료에서 개발에 필요한 결과만 구현 문서로 남겨 주세요."
+  default_prompt: "$ct-docs-impl ? 로 작업과 실제 호출 예제를 확인해 주세요."
 policy:
   allow_implicit_invocation: false

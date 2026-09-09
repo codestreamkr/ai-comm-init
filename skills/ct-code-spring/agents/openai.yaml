@@ -1,6 +1,6 @@
 interface:
-  display_name: "ct-spring"
+  display_name: "ct-code-spring"
   short_description: "현재 프로젝트 버전과 관례에 맞춘 Spring 구현·검토"
-  default_prompt: "$ct-spring ? 로 사용법과 실제 호출 예제를 확인해 주세요."
+  default_prompt: "$ct-code-spring ? 로 작업과 실제 호출 예제를 확인해 주세요."
 policy:
   allow_implicit_invocation: false

@@ -70,6 +70,34 @@ link_item() {
     echo "  linked: $label"
 }
 
+remove_stale_claude_skills() {
+    claude_skills="$1"
+    agents_skills="$2"
+
+    [ -d "$claude_skills" ] || return 0
+
+    for target in "$claude_skills"/*; do
+        [ -e "$target" ] || [ -L "$target" ] || continue
+        name="$(basename "$target")"
+        case "$name" in *.backup-*) continue ;; esac
+        case "$name" in ct-*) ;; *) continue ;; esac
+        if [ -d "$agents_skills/$name" ]; then
+            continue
+        fi
+
+        if [ -L "$target" ]; then
+            rm -- "$target"
+            echo "  removed stale link: skills/$name"
+        elif [ "$FORCE" = true ]; then
+            backup="$(backup_path "$target")"
+            mv -- "$target" "$backup"
+            echo "  backed up stale: $backup"
+        else
+            echo "  skipped stale (not a link): skills/$name"
+        fi
+    done
+}
+
 for required in skills claude codex; do
     if [ ! -d "$SOURCE_DIR/$required" ]; then
         echo "Invalid installation source: $SOURCE_DIR (missing $required/)" >&2
@@ -97,6 +125,7 @@ for skill in "$AGENTS_DIR"/skills/*; do
     case "$name" in *.backup-*) continue ;; esac
     link_item "$skill" "$CLAUDE_DIR/skills/$name" "skills/$name"
 done
+remove_stale_claude_skills "$CLAUDE_DIR/skills" "$AGENTS_DIR/skills"
 
 echo ""
 echo "Done."

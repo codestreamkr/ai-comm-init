@@ -49,5 +49,7 @@ cd ~/.agents && git pull
 bash install.sh --force
 ```
 
+설치는 `~/.claude/skills`에서 저장소에 없는 `ct-*` 링크를 정리한다.
+
 Windows 심볼릭 링크에는 개발자 모드 또는 관리자 권한이 필요하다.
 실패 시 다시 시도할 수 있도록 안내한다.

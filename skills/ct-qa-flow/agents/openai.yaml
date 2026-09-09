@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-qa-flow"
+  short_description: "사용자 흐름과 프로젝트 테스트 수단 기준 QA 범위·검증"
+  default_prompt: "$ct-qa-flow ? 로 필요한 입력과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

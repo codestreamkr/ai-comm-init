@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-run-script"
+  short_description: "프로젝트 실제 명령 기준 OS별 실행 스크립트 생성·검증"
+  default_prompt: "$ct-run-script ? 로 필요한 입력과 실제 호출 예제를 확인해 주세요."
+policy:
+  allow_implicit_invocation: false

@@ -77,6 +77,35 @@ function Install-Link {
     }
 }
 
+function Remove-StaleClaudeSkills {
+    param(
+        [string]$ClaudeSkillsDir,
+        [string]$AgentsSkillsDir
+    )
+
+    if (-not (Test-Path $ClaudeSkillsDir)) {
+        return
+    }
+
+    Get-ChildItem $ClaudeSkillsDir | ForEach-Object {
+        $Name = $_.Name
+        if ($Name -like "*.backup-*") { return }
+        if ($Name -notlike "ct-*") { return }
+        if (Test-Path (Join-Path $AgentsSkillsDir $Name)) { return }
+
+        if ($_.LinkType -eq "SymbolicLink") {
+            Remove-Item -LiteralPath $_.FullName
+            Write-Host "  removed stale link: skills\$Name"
+        } elseif ($Force) {
+            $Backup = Get-BackupPath -Path $_.FullName
+            Move-Item -LiteralPath $_.FullName -Destination $Backup
+            Write-Host "  backed up stale: $Backup"
+        } else {
+            Write-Host "  skipped stale (not a link): skills\$Name"
+        }
+    }
+}
+
 $script:SymlinkFallback = $false
 
 foreach ($Required in @("skills", "claude", "codex")) {
@@ -102,6 +131,7 @@ New-Item -ItemType Directory -Path $ClaudeSkillsDir -Force | Out-Null
 Get-ChildItem $AgentsSkillsDir -Directory | Where-Object { $_.Name -notlike "*.backup-*" } | ForEach-Object {
     Install-Link -Source $_.FullName -Target (Join-Path $ClaudeSkillsDir $_.Name) -Label "skills\$($_.Name)"
 }
+Remove-StaleClaudeSkills -ClaudeSkillsDir $ClaudeSkillsDir -AgentsSkillsDir $AgentsSkillsDir
 
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green
