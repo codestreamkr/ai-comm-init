@@ -1,0 +1,21 @@
+{
+  "model": "opus",
+  "effortLevel": "medium",
+  "tui": "fullscreen",
+  "theme": "auto",
+  "agentPushNotifEnabled": true,
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "sonnet"
+  },
+  "fallbackModel": [
+    "claude-sonnet-5",
+    "claude-haiku-4-5-20251001"
+  ],
+  "statusLine": {
+    "type": "command",
+    "command": "node $HOME/.claude/statusline.js"
+  },
+  "enabledPlugins": {
+    "context7@claude-plugins-official": true
+  }
+}
