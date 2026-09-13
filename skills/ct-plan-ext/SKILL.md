@@ -1,6 +1,8 @@
 ---
 name: ct-plan-ext
 description: 사용자가 `$ct-plan-ext`를 명시적으로 호출하면 현재 연동 코드와 공급자 공식 자료를 근거로 외부 서비스 연동 또는 이관 구조를 설계한다. 운영 코드는 수정하지 않는다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Plan Ext
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-plan-ext`를 명시적으로 호출하면 현재 
 
 - `$ct-plan-ext`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-plan-ext <요청>`: 요청한 외부 연동 또는 이관 구조를 설계한다.
+- Claude Code는 `/ct-plan-ext <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-plan-ext 기존 PG를 새 공급자로 이관하는 구조를 설계해줘`
 

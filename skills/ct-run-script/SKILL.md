@@ -1,6 +1,8 @@
 ---
 name: ct-run-script
 description: 사용자가 `$ct-run-script`를 명시적으로 호출하면 프로젝트의 실제 빌드·실행 명령으로 대상 환경의 실행 스크립트를 생성하거나 갱신하고 검증한다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Run Script
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-run-script`를 명시적으로 호출하면 프�
 
 - `$ct-run-script`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-run-script <요청>`: 요청한 환경의 실행 스크립트를 만들거나 고친다.
+- Claude Code는 `/ct-run-script <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-run-script macOS에서 API와 프론트를 함께 실행하게 해줘`
 

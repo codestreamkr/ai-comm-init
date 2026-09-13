@@ -1,6 +1,8 @@
 ---
 name: ct-qa-flow
 description: 사용자가 `$ct-qa-flow`를 명시적으로 호출하면 사용자 흐름과 프로젝트의 테스트·관측 수단으로 QA 범위를 설계하고 가능한 검증을 수행한다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT QA Flow
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-qa-flow`를 명시적으로 호출하면 사용�
 
 - `$ct-qa-flow`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-qa-flow <요청>`: 대상 기능의 위험을 정하고 가능한 검증을 수행한다.
+- Claude Code는 `/ct-qa-flow <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-qa-flow 주문 취소 기능을 오픈 전에 검증해줘`
 

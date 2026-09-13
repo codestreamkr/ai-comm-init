@@ -1,6 +1,8 @@
 ---
 name: ct-docs-impl
 description: 사용자가 `$ct-docs-impl`를 명시적으로 호출하면 코드와 기술 자료를 근거로 개발에 필요한 구현 문서를 작성·통합·정리하거나 현재 구현에 맞춰 갱신한다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Docs Impl
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-docs-impl`를 명시적으로 호출하면 코드
 
 - `$ct-docs-impl`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-docs-impl <요청>`: 요청과 대상 상태에서 필요한 문서 작업을 판단해 실행한다.
+- Claude Code는 `/ct-docs-impl <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-docs-impl payment.md를 현재 코드에 맞춰줘`
 

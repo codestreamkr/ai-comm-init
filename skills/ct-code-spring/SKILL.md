@@ -1,6 +1,8 @@
 ---
 name: ct-code-spring
 description: 사용자가 `$ct-code-spring`를 명시적으로 호출하면 현재 프로젝트의 Spring 버전과 코드 관례에 맞춰 코드·설정을 구현하거나 검토한다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Code Spring
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-code-spring`를 명시적으로 호출하면 현�
 
 - `$ct-code-spring`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-code-spring <요청>`: 요청에서 검토인지 변경인지 판단해 실행한다.
+- Claude Code는 `/ct-code-spring <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-code-spring 주문 취소 트랜잭션을 구현해줘`
 

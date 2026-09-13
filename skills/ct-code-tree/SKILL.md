@@ -1,6 +1,8 @@
 ---
 name: ct-code-tree
 description: 사용자가 `$ct-code-tree`를 명시적으로 호출하면 프로젝트 코드의 실제 호출과 데이터 흐름을 읽기 전용으로 분석한다. 테스트 작성과 구조 전환 계획은 수행하지 않는다.
+argument-hint: "<대상>"
+disable-model-invocation: true
 ---
 
 # CT Code Tree
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-code-tree`를 명시적으로 호출하면 프로
 
 - `$ct-code-tree`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-code-tree <대상>`: 대상의 호출과 데이터 흐름을 분석한다.
+- Claude Code는 `/ct-code-tree <대상>`로 호출한다. 호출 뒤 대상이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-code-tree OrderController.cancel의 호출 흐름을 분석해줘`
 

@@ -1,6 +1,8 @@
 ---
 name: ct-plan-work
 description: 사용자가 `$ct-plan-work`를 명시적으로 호출하면 프로젝트와 요청 자료를 근거로 제품 기획, 설계 검토, 구현 또는 구조 전환 계획, 개선 계획을 작성한다. 운영 코드는 수정하지 않는다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Plan Work
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-plan-work`를 명시적으로 호출하면 프로
 
 - `$ct-plan-work`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-plan-work <요청>`: 요청에서 필요한 결과와 대상을 판단해 실행한다.
+- Claude Code는 `/ct-plan-work <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-plan-work 주문 취소 기능의 구현 계획을 작성해줘`
 

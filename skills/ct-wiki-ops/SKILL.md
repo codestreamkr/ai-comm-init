@@ -1,6 +1,8 @@
 ---
 name: ct-wiki-ops
 description: 사용자가 `$ct-wiki-ops`를 명시적으로 호출하면 프로젝트 Markdown 위키 규칙으로 초기화, 원문 보관, 반영, 조회, 통합과 품질 점검을 수행한다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Wiki Ops
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-wiki-ops`를 명시적으로 호출하면 프로�
 
 - `$ct-wiki-ops`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-wiki-ops <요청>`: 요청과 현재 위키 상태에서 필요한 작업을 판단해 실행한다.
+- Claude Code는 `/ct-wiki-ops <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-wiki-ops 지난 7일의 변경과 남은 작업을 정리해줘`
 

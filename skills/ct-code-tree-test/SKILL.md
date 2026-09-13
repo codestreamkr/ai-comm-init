@@ -1,6 +1,8 @@
 ---
 name: ct-code-tree-test
 description: 사용자가 `$ct-code-tree-test`를 명시적으로 호출하면 호출 흐름과 현재 코드를 근거로 동작을 고정하는 테스트를 작성·수정하고 검증한다. 운영 코드는 수정하지 않는다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Code Tree Test
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-code-tree-test`를 명시적으로 호출하면 �
 
 - `$ct-code-tree-test`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-code-tree-test <요청>`: 대상 흐름의 테스트를 만들거나 고치고 검증한다.
+- Claude Code는 `/ct-code-tree-test <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-code-tree-test .docs/callTree-OrderController-cancel.md를 근거로 테스트를 작성해줘`
 

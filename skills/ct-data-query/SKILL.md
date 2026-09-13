@@ -1,6 +1,8 @@
 ---
 name: ct-data-query
 description: 사용자가 `$ct-data-query`를 명시적으로 호출하면 현재 데이터베이스 환경과 실행 근거로 SQL 성능 원인을 분석하고 개선안을 검증한다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Data Query
@@ -11,6 +13,7 @@ description: 사용자가 `$ct-data-query`를 명시적으로 호출하면 현�
 
 - `$ct-data-query`: 역할, 필요한 입력과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-data-query <요청>`: 대상 쿼리의 병목을 분석하고 개선안을 검증한다.
+- Claude Code는 `/ct-data-query <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-data-query OrderMapper.xml의 findOrders가 느린 원인을 분석해줘`
 

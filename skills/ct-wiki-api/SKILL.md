@@ -1,6 +1,8 @@
 ---
 name: ct-wiki-api
 description: 사용자가 `$ct-wiki-api`를 명시적으로 호출하면 포함된 PowerShell 도구와 환경변수로 Confluence REST API 호환 위키를 검색·조회·저장하거나 명시된 변경을 수행한다.
+argument-hint: "<요청>"
+disable-model-invocation: true
 ---
 
 # CT Wiki API
@@ -11,10 +13,13 @@ description: 사용자가 `$ct-wiki-api`를 명시적으로 호출하면 포함�
 
 - `$ct-wiki-api`: 역할, 필요한 환경과 대표 예제를 안내한다. 실행하지 않는다.
 - `$ct-wiki-api <요청>`: 요청 의도를 판단해 아래 스크립트 명령으로 실행한다.
+- Claude Code는 `/ct-wiki-api <요청>`로 호출한다. 호출 뒤 요청이 비어 있으면 안내만 하고 실행하지 않는다.
 
 예: `$ct-wiki-api 333 페이지와 댓글을 조회해줘`
 
 ## 명령 선택
+
+실행 형식: `pwsh -NoProfile -File <스킬 디렉터리>/scripts/wiki-api.ps1 <명령> [옵션]`. Windows PowerShell에서는 `pwsh` 대신 `powershell`을 쓸 수 있다. 둘 다 없으면 PowerShell 설치가 필요하다고 보고하고 다른 방법으로 우회하지 않는다.
 
 - 환경 확인: `check-env`
 - 제목·자연어·page id·URL 검색: `smart-search -Query`. 입력 자체가 CQL일 때만 `search -Cql`
