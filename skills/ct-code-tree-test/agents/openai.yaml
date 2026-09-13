@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-code-tree-test"
+  short_description: "호출 흐름과 현재 코드 근거 테스트 작성·검증"
+  default_prompt: "$ct-code-tree-test 역할, 필요한 입력과 대표 예제를 안내해 주세요."
+policy:
+  allow_implicit_invocation: false

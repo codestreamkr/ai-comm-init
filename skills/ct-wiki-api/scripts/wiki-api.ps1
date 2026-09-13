@@ -47,8 +47,8 @@ function Restore-TemporaryEnv {
     }
 }
 
-# Codex sessions can inherit a local proxy that rejects Wiki API calls.
-if ($NoProxy -or -not $UseProxy) {
+# Keep the caller's proxy configuration unless bypass was explicitly requested.
+if ($NoProxy) {
     foreach ($name in @("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy")) {
         Set-TemporaryEnv -Name $name -Value $null
     }
@@ -65,14 +65,15 @@ function Get-WikiEnv {
         [switch]$Required
     )
 
-    $value = $null
     foreach ($scope in @("Process", "User", "Machine")) {
         $value = [Environment]::GetEnvironmentVariable($Name, $scope)
         if (-not [string]::IsNullOrWhiteSpace($value)) {
             return $value
         }
+    }
 
-        if (-not [string]::IsNullOrWhiteSpace($FallbackName)) {
+    if (-not [string]::IsNullOrWhiteSpace($FallbackName)) {
+        foreach ($scope in @("Process", "User", "Machine")) {
             $value = [Environment]::GetEnvironmentVariable($FallbackName, $scope)
             if (-not [string]::IsNullOrWhiteSpace($value)) {
                 return $value
@@ -91,29 +92,42 @@ function Get-WikiEnv {
 }
 
 function Test-WikiEnv {
-    $names = @(
-        "WIKI_API_BASE_URL",
-        "WIKI_API_AUTH_TYPE",
-        "WIKI_API_TOKEN",
-        "WIKI_API_USER",
-        "WIKI_API_PASSWORD",
-        "WIKI_API_DEFAULT_SPACE",
-        "WIKI_API_RAW_DIR",
-        "WIKI_API_ROOT"
+    $entries = @(
+        @{ Name = "WIKI_API_BASE_URL"; Fallback = "CONFLUENCE_BASE_URL" },
+        @{ Name = "WIKI_API_AUTH_TYPE"; Fallback = "CONFLUENCE_AUTH_TYPE" },
+        @{ Name = "WIKI_API_TOKEN"; Fallback = "CONFLUENCE_TOKEN" },
+        @{ Name = "WIKI_API_USER"; Fallback = "CONFLUENCE_USER" },
+        @{ Name = "WIKI_API_PASSWORD"; Fallback = "CONFLUENCE_PASSWORD" },
+        @{ Name = "WIKI_API_DEFAULT_SPACE"; Fallback = "CONFLUENCE_DEFAULT_SPACE" },
+        @{ Name = "WIKI_API_RAW_DIR"; Fallback = "CONFLUENCE_RAW_DIR" },
+        @{ Name = "WIKI_API_ROOT"; Fallback = "CONFLUENCE_API_ROOT" }
     )
 
-    foreach ($name in $names) {
+    foreach ($entry in $entries) {
         $set = $false
+        $resolvedName = $null
         foreach ($scope in @("Process", "User", "Machine")) {
-            if (-not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name, $scope))) {
+            if (-not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($entry.Name, $scope))) {
                 $set = $true
+                $resolvedName = $entry.Name
                 break
+            }
+        }
+        if (-not $set) {
+            foreach ($scope in @("Process", "User", "Machine")) {
+                if (-not [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($entry.Fallback, $scope))) {
+                    $set = $true
+                    $resolvedName = $entry.Fallback
+                    break
+                }
             }
         }
 
         [pscustomobject]@{
-            Name = $name
+            Name = $entry.Name
+            Fallback = $entry.Fallback
             Set = $set
+            ResolvedName = $resolvedName
         }
     }
 }
@@ -344,6 +358,76 @@ function Invoke-WikiSearch {
     return Invoke-WikiApi -Method "GET" -Path "/content/search$query"
 }
 
+function Find-WikiPageByTitle {
+    param(
+        [Parameter(Mandatory = $true)][string]$PageTitle,
+        [Parameter(Mandatory = $true)][string]$SpaceKey,
+        [string]$DirectParentId
+    )
+
+    $searchCql = Join-WikiCql @(
+        "type = page",
+        ("space = " + (ConvertTo-CqlLiteral $SpaceKey)),
+        ("title = " + (ConvertTo-CqlLiteral $PageTitle))
+    )
+    $pageLimit = 100
+    $startIndex = 0
+    $matches = @()
+
+    while ($true) {
+        $page = Invoke-WikiSearch -SearchCql $searchCql -ExpandValue "space,version,ancestors" -StartIndex $startIndex -PageLimit $pageLimit
+        $results = @($page.results)
+        foreach ($candidate in $results) {
+            $resolvedCandidate = Invoke-WikiApi -Method "GET" -Path "/content/$($candidate.id)`?expand=space,version,ancestors"
+            if ($null -eq $resolvedCandidate.PSObject.Properties["ancestors"]) {
+                throw "Wiki API did not return ancestors while checking duplicate page id $($candidate.id)."
+            }
+            $parents = @($resolvedCandidate.ancestors)
+            if ([string]::IsNullOrWhiteSpace($DirectParentId)) {
+                if ($parents.Count -eq 0) {
+                    $matches += $resolvedCandidate
+                }
+                continue
+            }
+            if ($parents.Count -gt 0 -and [string]$parents[-1].id -eq [string]$DirectParentId) {
+                $matches += $resolvedCandidate
+            }
+        }
+
+        if ($results.Count -lt $pageLimit) {
+            break
+        }
+        $startIndex += $results.Count
+    }
+
+    return @($matches)
+}
+
+function Assert-WikiPageState {
+    param(
+        [Parameter(Mandatory = $true)][object]$Page,
+        [Parameter(Mandatory = $true)][string]$ExpectedId,
+        [Parameter(Mandatory = $true)][string]$ExpectedTitle,
+        [Parameter(Mandatory = $true)][string]$ExpectedSpace,
+        [AllowNull()][string]$ExpectedParentId,
+        [int]$ExpectedVersion = -1
+    )
+
+    $parents = @($Page.ancestors)
+    $actualParentId = $null
+    if ($parents.Count -gt 0) {
+        $actualParentId = [string]$parents[-1].id
+    }
+
+    if ([string]$Page.id -ne $ExpectedId -or
+        [string]$Page.title -ne $ExpectedTitle -or
+        [string]$Page.space.key -ne $ExpectedSpace -or
+        [string]$actualParentId -ne [string]$ExpectedParentId -or
+        ($ExpectedVersion -ge 0 -and [int]$Page.version.number -ne $ExpectedVersion)) {
+        throw "Wiki API verification failed for page id $ExpectedId."
+    }
+}
+
 function Invoke-WikiContentCollection {
     param(
         [Parameter(Mandatory = $true)][string]$ContentId,
@@ -439,6 +523,16 @@ function Invoke-WikiSmartSearch {
         }
     }
 
+    if ($value -match "(?i)/spaces/[^/?#]+/pages/(\d+)") {
+        $resolvedPageId = $Matches[1]
+        $page = Invoke-WikiApi -Method "GET" -Path "/content/$resolvedPageId`?expand=body.storage,version,space"
+        return [pscustomobject]@{
+            mode = "url-page-id"
+            pageId = $resolvedPageId
+            result = $page
+        }
+    }
+
     $searchText = $value
     $searchSpace = $SpaceKey
     if ($value -match "(?i)/display/([^/?#]+)/([^?#]+)") {
@@ -446,6 +540,9 @@ function Invoke-WikiSmartSearch {
             $searchSpace = ConvertFrom-UrlValue $Matches[1]
         }
         $searchText = ConvertFrom-UrlValue $Matches[2]
+    }
+    if ([string]::IsNullOrWhiteSpace($searchSpace)) {
+        $searchSpace = Get-WikiEnv -Name "WIKI_API_DEFAULT_SPACE" -FallbackName "CONFLUENCE_DEFAULT_SPACE"
     }
 
     $attempts = @(
@@ -736,9 +833,18 @@ try {
                     $spaceKey = $parent.space.key
                 }
             }
+            if ([string]::IsNullOrWhiteSpace($spaceKey)) {
+                $spaceKey = Get-WikiEnv -Name "WIKI_API_DEFAULT_SPACE" -FallbackName "CONFLUENCE_DEFAULT_SPACE"
+            }
 
             if ([string]::IsNullOrWhiteSpace($spaceKey)) {
                 throw "Space is required for create-page when ParentId is not provided."
+            }
+
+            $duplicates = @(Find-WikiPageByTitle -PageTitle $Title -SpaceKey $spaceKey -DirectParentId $ParentId)
+            if ($duplicates.Count -gt 0) {
+                $duplicateIds = ($duplicates | ForEach-Object { [string]$_.id }) -join ","
+                throw "A page with the same title already exists in the target location. PageIds=$duplicateIds"
             }
 
             $payload = @{
@@ -766,7 +872,15 @@ try {
             }
 
             $result = Invoke-WikiApi -Method "POST" -Path "/content" -Body $payload
-            $result | ConvertTo-Json -Depth 20
+            if ([string]::IsNullOrWhiteSpace([string]$result.id)) {
+                throw "Wiki API created a page but did not return a page id."
+            }
+            $confirmed = Invoke-WikiApi -Method "GET" -Path "/content/$($result.id)`?expand=version,space,ancestors"
+            Assert-WikiPageState -Page $confirmed -ExpectedId ([string]$result.id) -ExpectedTitle $Title -ExpectedSpace $spaceKey -ExpectedParentId $ParentId
+            [pscustomobject]@{
+                created = $result
+                confirmed = $confirmed
+            } | ConvertTo-Json -Depth 20
         }
 
         "update-page" {
@@ -780,7 +894,7 @@ try {
                 throw "BodyFile does not exist: $BodyFile"
             }
 
-            $current = Invoke-WikiApi -Method "GET" -Path "/content/$PageId`?expand=body.storage,version,space"
+            $current = Invoke-WikiApi -Method "GET" -Path "/content/$PageId`?expand=body.storage,version,space,ancestors"
             $nextTitle = $Title
             if ([string]::IsNullOrWhiteSpace($nextTitle)) {
                 $nextTitle = $current.title
@@ -808,7 +922,17 @@ try {
             }
 
             $result = Invoke-WikiApi -Method "PUT" -Path "/content/$PageId" -Body $payload
-            $result | ConvertTo-Json -Depth 20
+            $confirmed = Invoke-WikiApi -Method "GET" -Path "/content/$PageId`?expand=version,space,ancestors"
+            $currentParents = @($current.ancestors)
+            $currentParentId = $null
+            if ($currentParents.Count -gt 0) {
+                $currentParentId = [string]$currentParents[-1].id
+            }
+            Assert-WikiPageState -Page $confirmed -ExpectedId $PageId -ExpectedTitle $nextTitle -ExpectedSpace ([string]$current.space.key) -ExpectedParentId $currentParentId -ExpectedVersion ([int]$current.version.number + 1)
+            [pscustomobject]@{
+                updated = $result
+                confirmed = $confirmed
+            } | ConvertTo-Json -Depth 20
         }
     }
 }

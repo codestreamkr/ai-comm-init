@@ -1,42 +1,40 @@
 ---
 name: ct-wiki-api
-description: 사용자가 `$ct-wiki-api`를 명시적으로 호출하면 포함된 PowerShell 도구와 환경변수로 Confluence REST API 호환 위키를 검색, 조회, 저장하거나 명시된 변경을 수행한다. 지원 작업은 `env`, `search`, `get`, `save`, `write`다.
+description: 사용자가 `$ct-wiki-api`를 명시적으로 호출하면 포함된 PowerShell 도구와 환경변수로 Confluence REST API 호환 위키를 검색·조회·저장하거나 명시된 변경을 수행한다.
 ---
 
 # CT Wiki API
 
-실행 계약은 `scripts/wiki-api.ps1`이다. 로컬 위키 규칙은 `ct-wiki-ops`다.
+실행 계약은 `scripts/wiki-api.ps1`이다. 로컬 Markdown 위키는 `ct-wiki-ops`의 범위다.
 
 ## 호출
 
-- `$ct-wiki-api` 또는 `$ct-wiki-api ?`: 안내. 실행하지 않는다.
-- `$ct-wiki-api <작업> ?`: 해당 작업 안내.
-- `$ct-wiki-api <작업> <대상>`: 실행.
+- `$ct-wiki-api`: 역할, 필요한 환경과 대표 예제를 안내한다. 실행하지 않는다.
+- `$ct-wiki-api <요청>`: 요청 의도를 판단해 아래 스크립트 명령으로 실행한다.
 
-첫 토큰이 `env`, `search`, `get`, `save`, `write`가 아니면 안내만 한다. `--`로 시작하면 지원하지 않는 옵션이다. `env`를 제외하면 대상 없이 실행하지 않는다. 스킬 토큰을 스크립트 `$Command`로 넘기지 않는다.
+예: `$ct-wiki-api 333 페이지와 댓글을 조회해줘`
 
-## 작업
+## 명령 선택
 
-요청은 아래 작업으로만 받고, 표의 스크립트 명령으로 내린다.
+- 환경 확인: `check-env`
+- 제목·자연어·page id·URL 검색: `smart-search -Query`. 입력 자체가 CQL일 때만 `search -Cql`
+- 페이지 조회: `get-page -PageId`; 댓글·첨부·하위 페이지 등은 해당 `get-*`
+- 원문 저장: `save-page -PageId`; 댓글 저장은 `save-comments`
+- 페이지 생성·수정: `create-page`, `update-page`
 
-| 작업 | 하는 일 | 스크립트 명령 |
-|---|---|---|
-| `env` | 환경변수 설정 여부만 확인 | 항상 `check-env` |
-| `search` | 제목·자연어·page id·URL 검색. CQL은 입력이 CQL일 때만 | 기본 `smart-search -Query`. CQL만 `search -Cql` |
-| `get` | 페이지와 부가 정보 조회 | 기본 `get-page -PageId`. 부가 요청은 아래 `get-*` |
-| `save` | 로컬 원문 저장 | 기본 `save-page -PageId`. 댓글은 `save-comments` |
-| `write` | 페이지 생성·수정 | 생성 `create-page`, 수정 `update-page` |
+page id나 URL의 단순 조회는 검색하지 않고 `get-page`를 사용한다. 여러 검색 결과는 제목, Space와 page id로 구분한다.
 
-`get-*`: `get-comments`, `get-attachments`, `get-child-pages`, `get-descendant-pages`, `get-labels`, `get-history`, `get-restrictions`, `get-page-bundle`.
+## 변경 안전
 
-- `search`: 제목, 자연어, page id, URL은 `smart-search -Query`다. 입력이 CQL일 때만 `search -Cql`이다. page id·URL을 CQL `search`로 보내지 않는다. 조회만이면 `get`을 안내해도 된다. Space가 있으면 `-Space`. 여러 결과면 제목·Space·page id로 구분한다.
-- `get`: page id 또는 그것이 든 URL은 `get-page`다.
-- `write`: 첫 호출은 `-Write` 없이 dry-run이다. 사용자가 반영 범위를 명시한 뒤에만 `-Write`를 붙인다. 스킬 토큰 `write`를 명령이나 `-Write`와 같은 말로 쓰지 않는다.
+- 생성·수정의 첫 실행은 `-Write` 없는 dry-run이다.
+- dry-run 결과와 실제 반영 범위를 사용자가 명시한 뒤에만 `-Write`를 붙인다.
+- 생성 전 같은 Space·부모·제목의 기존 페이지를 확인해 중복 가능성을 보고한다.
+- 실제 반영 후 반환값이나 재조회로 page id, 부모, Space와 version을 확인한다.
+- 실패한 변경을 자동 재시도하지 않는다.
 
-예: `$ct-wiki-api get 333`
+## 완료 기준
 
-## 역할 규칙
-
-- 스킬 디렉터리의 `scripts/wiki-api.ps1`만 실행한다. 다른 클라이언트로 우회하지 않는다.
-- 작업 전에 `check-env`로 환경변수 이름 존재만 확인한다. 인증값은 출력하거나 파일에 쓰지 않는다.
-- 누락된 환경변수는 이름만 보고한다.
+- 실행 전에 `check-env`로 필요한 환경변수의 설정 여부만 확인한다. 인증값은 출력하거나 파일에 쓰지 않는다.
+- 스킬 디렉터리의 `scripts/wiki-api.ps1`만 사용하고 다른 클라이언트로 우회하지 않는다.
+- 사용한 내부 명령, 대상, 결과와 저장 경로를 보고한다.
+- 누락된 환경변수와 실행 실패는 비밀값 없이 이름과 원인만 보고한다.
