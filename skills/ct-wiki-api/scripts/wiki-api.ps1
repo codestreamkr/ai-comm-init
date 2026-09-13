@@ -47,8 +47,8 @@ function Restore-TemporaryEnv {
     }
 }
 
-# Keep the caller's proxy configuration unless bypass was explicitly requested.
-if ($NoProxy) {
+# Codex sessions can inherit a local proxy that rejects Wiki API calls.
+if ($NoProxy -or -not $UseProxy) {
     foreach ($name in @("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy")) {
         Set-TemporaryEnv -Name $name -Value $null
     }
