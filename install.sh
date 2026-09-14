@@ -9,6 +9,7 @@ SOURCE_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 AGENTS_DIR="${AGENTS_HOME:-$HOME/.agents}"
 CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+GROK_DIR="${GROK_HOME:-$HOME/.grok}"
 FORCE=false
 
 if [ "${1:-}" = "--force" ]; then
@@ -105,7 +106,7 @@ for required in skills claude codex; do
     fi
 done
 
-echo "[1/2] Installing Skills ..."
+echo "[1/3] Installing Skills ..."
 if [ "$SOURCE_DIR" = "$AGENTS_DIR" ]; then
     echo "  source is already $AGENTS_DIR"
 else
@@ -115,9 +116,12 @@ else
         name="$(basename "$skill")"
         install_item "$skill" "$AGENTS_DIR/skills/$name" "skills/$name"
     done
+    if [ -d "$SOURCE_DIR/grok" ]; then
+        install_item "$SOURCE_DIR/grok" "$AGENTS_DIR/grok" "grok"
+    fi
 fi
 
-echo "[2/2] Linking Skills into Claude Code ..."
+echo "[2/3] Linking Skills into Claude Code ..."
 mkdir -p "$CLAUDE_DIR/skills"
 for skill in "$AGENTS_DIR"/skills/*; do
     [ -d "$skill" ] || continue
@@ -127,10 +131,20 @@ for skill in "$AGENTS_DIR"/skills/*; do
 done
 remove_stale_claude_skills "$CLAUDE_DIR/skills" "$AGENTS_DIR/skills"
 
+echo "[3/3] Linking Grok statusline ..."
+if [ -f "$AGENTS_DIR/grok/statusline.js" ]; then
+    mkdir -p "$GROK_DIR"
+    link_item "$AGENTS_DIR/grok/statusline.js" "$GROK_DIR/statusline.js" "grok/statusline.js"
+else
+    echo "  skipped: grok/statusline.js not found"
+fi
+
 echo ""
 echo "Done."
 echo "  Skills: $AGENTS_DIR/skills"
+echo "  Grok statusline: $GROK_DIR/statusline.js -> $AGENTS_DIR/grok/statusline.js"
 echo ""
 echo "Next:"
 echo "  - Claude Code: ask to review and merge $SOURCE_DIR/claude into $CLAUDE_DIR."
 echo "  - Codex: ask to merge $SOURCE_DIR/codex/config.toml into $CODEX_DIR/config.toml."
+echo "  - Grok: keep $GROK_DIR/config.toml machine-local; it should run the linked statusline.js."

@@ -12,6 +12,7 @@ $SourceDir = $PSScriptRoot
 $AgentsDir = if ($env:AGENTS_HOME) { $env:AGENTS_HOME } else { Join-Path $env:USERPROFILE ".agents" }
 $ClaudeDir = if ($env:CLAUDE_HOME) { $env:CLAUDE_HOME } else { Join-Path $env:USERPROFILE ".claude" }
 $CodexDir  = if ($env:CODEX_HOME)  { $env:CODEX_HOME }  else { Join-Path $env:USERPROFILE ".codex" }
+$GrokDir   = if ($env:GROK_HOME)   { $env:GROK_HOME }   else { Join-Path $env:USERPROFILE ".grok" }
 
 function Get-BackupPath {
     param([string]$Path)
@@ -56,7 +57,8 @@ function Install-Link {
     param(
         [string]$Source,
         [string]$Target,
-        [string]$Label
+        [string]$Label,
+        [scriptblock]$Fallback
     )
 
     $Existing = Get-Item -LiteralPath $Target -ErrorAction SilentlyContinue
@@ -71,10 +73,31 @@ function Install-Link {
         New-Item -ItemType SymbolicLink -Path $Target -Target $Source -ErrorAction Stop | Out-Null
         Write-Host "  linked: $Label"
     } catch {
-        Copy-Item -LiteralPath $Source -Destination $Target -Recurse
-        Write-Host "  copied (symlink unavailable): $Label"
+        if ($Fallback) {
+            & $Fallback
+            Write-Host "  stubbed (symlink unavailable): $Label"
+        } else {
+            Copy-Item -LiteralPath $Source -Destination $Target -Recurse
+            Write-Host "  copied (symlink unavailable): $Label"
+        }
         $script:SymlinkFallback = $true
     }
+}
+
+function Write-GrokStatuslineStub {
+    param(
+        [string]$Target,
+        [string]$AgentsHome
+    )
+
+    $escaped = $AgentsHome.Replace('\', '\\')
+    @(
+        '#!/usr/bin/env node'
+        'const os = require(''os'');'
+        'const path = require(''path'');'
+        "const root = process.env.AGENTS_HOME || '$escaped';"
+        "require(path.join(root, 'grok', 'statusline.js'));"
+    ) -join "`n" | Set-Content -LiteralPath $Target -Encoding utf8NoBOM -NoNewline
 }
 
 function Remove-StaleClaudeSkills {
@@ -114,7 +137,7 @@ foreach ($Required in @("skills", "claude", "codex")) {
     }
 }
 
-Write-Host "[1/2] Installing Skills ..." -ForegroundColor Cyan
+Write-Host "[1/3] Installing Skills ..." -ForegroundColor Cyan
 $AgentsSkillsDir = Join-Path $AgentsDir "skills"
 if ($SourceDir -eq $AgentsDir) {
     Write-Host "  source is already $AgentsDir"
@@ -123,9 +146,13 @@ if ($SourceDir -eq $AgentsDir) {
     Get-ChildItem (Join-Path $SourceDir "skills") -Directory | ForEach-Object {
         Install-Item -Source $_.FullName -Target (Join-Path $AgentsSkillsDir $_.Name) -Label "skills\$($_.Name)"
     }
+    $SourceGrok = Join-Path $SourceDir "grok"
+    if (Test-Path $SourceGrok) {
+        Install-Item -Source $SourceGrok -Target (Join-Path $AgentsDir "grok") -Label "grok"
+    }
 }
 
-Write-Host "[2/2] Linking Skills into Claude Code ..." -ForegroundColor Cyan
+Write-Host "[2/3] Linking Skills into Claude Code ..." -ForegroundColor Cyan
 $ClaudeSkillsDir = Join-Path $ClaudeDir "skills"
 New-Item -ItemType Directory -Path $ClaudeSkillsDir -Force | Out-Null
 Get-ChildItem $AgentsSkillsDir -Directory | Where-Object { $_.Name -notlike "*.backup-*" } | ForEach-Object {
@@ -133,16 +160,30 @@ Get-ChildItem $AgentsSkillsDir -Directory | Where-Object { $_.Name -notlike "*.b
 }
 Remove-StaleClaudeSkills -ClaudeSkillsDir $ClaudeSkillsDir -AgentsSkillsDir $AgentsSkillsDir
 
+Write-Host "[3/3] Linking Grok statusline ..." -ForegroundColor Cyan
+$GrokStatuslineSource = Join-Path $AgentsDir "grok\statusline.js"
+$GrokStatuslineTarget = Join-Path $GrokDir "statusline.js"
+if (Test-Path $GrokStatuslineSource) {
+    New-Item -ItemType Directory -Path $GrokDir -Force | Out-Null
+    Install-Link -Source $GrokStatuslineSource -Target $GrokStatuslineTarget -Label "grok\statusline.js" -Fallback {
+        Write-GrokStatuslineStub -Target $GrokStatuslineTarget -AgentsHome $AgentsDir
+    }
+} else {
+    Write-Host "  skipped: grok\statusline.js not found"
+}
+
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green
 Write-Host "  Skills: $AgentsSkillsDir"
+Write-Host "  Grok statusline: $GrokStatuslineTarget -> $GrokStatuslineSource"
 Write-Host ""
 Write-Host "Next:"
 Write-Host "  - Claude Code: ask to review and merge $(Join-Path $SourceDir 'claude') into $ClaudeDir."
 Write-Host "  - Codex: ask to merge $(Join-Path $SourceDir 'codex\config.toml') into $(Join-Path $CodexDir 'config.toml')."
+Write-Host "  - Grok: keep $GrokDir\config.toml machine-local; it should run the linked statusline.js."
 
 if ($script:SymlinkFallback) {
     Write-Host ""
-    Write-Host "Note: symbolic links were unavailable, so Skills were copied." -ForegroundColor Yellow
+    Write-Host "Note: symbolic links were unavailable, so Skills were copied and Grok statusline was stubbed." -ForegroundColor Yellow
     Write-Host "      Enable Developer Mode or run as administrator, then rerun to link them."
 }

@@ -20,6 +20,8 @@ irm https://chatgpt.com/codex/install.ps1 | iex
 git clone https://github.com/codestreamkr/ai-comm-init.git $env:USERPROFILE\.agents
 ```
 
+정본은 이 저장소(`~/.agents`)다. `~/.claude`, `~/.codex`, `~/.grok`는 정본을 가져다 쓰는 런타임 홈이다.
+
 ## 2. 스킬 배치
 
 ```bash
@@ -32,6 +34,8 @@ bash ~/.agents/install.sh --force  # 기존 파일 백업 후 덮어쓰기
 & "$env:USERPROFILE\.agents\install.ps1" -Force
 ```
 
+설치는 `~/.claude/skills`에 스킬을 링크하고, `~/.grok/statusline.js`를 `grok/statusline.js`에 링크한다.
+
 ## 3. 설정 병합
 
 Claude Code에 요청한다.
@@ -41,6 +45,8 @@ Claude Code에 요청한다.
 Codex CLI에 요청한다.
 
 > `~/.agents/codex`의 설정을 검토하고 `~/.codex`에 병합·적용해줘. 기존 설정은 유지해줘.
+
+Grok `config.toml`과 훅은 머신 로컬이다. 상태줄 `command`는 연결된 `~/.grok/statusline.js`를 실행하면 된다.
 
 ## 4. 최신 정보 갱신
 

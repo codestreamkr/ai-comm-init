@@ -12,10 +12,31 @@ const authPath = path.join(grokHome, 'auth.json');
 const FETCH_MS = 8000;
 
 let raw = '';
-process.stdin.on('data', chunk => raw += chunk);
+let handled = false;
+
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => {
+    raw += chunk;
+    const data = tryParse(raw);
+    if (data) dispatch(data);
+});
 process.stdin.on('end', () => {
+    if (handled) return;
     let data = {};
     try { data = JSON.parse(raw); } catch {}
+    dispatch(data);
+});
+
+function tryParse(text) {
+    const t = String(text || '').trim();
+    if (!t) return null;
+    try { return JSON.parse(t); } catch { return null; }
+}
+
+function dispatch(data) {
+    if (handled) return;
+    handled = true;
+    try { process.stdin.pause(); } catch {}
 
     const event = hookEvent(data);
     if (event) {
@@ -24,7 +45,8 @@ process.stdin.on('end', () => {
         return;
     }
     paint(data);
-});
+    process.exit(0);
+}
 
 function hookEvent(data) {
     const name = data.hook_event_name || data.hookEventName || '';
@@ -42,37 +64,37 @@ function shouldFetch(event, data) {
 
 function paint(data) {
     const sessionId = (data.session_id || data.sessionId || '').slice(0, 8);
-    const cwd = data.workspace?.current_dir || data.cwd || '';
-    const model = data.model?.display_name || '';
     const pct = Math.floor(data.context_window?.used_percentage || 0);
-    const branch = data.workspace?.branch || '';
-    const gitInfo = branch ? `(${branch})` : '';
 
     const parts = [];
-    if (sessionId || cwd) parts.push(`[${sessionId}] ${cwd} ${gitInfo}`.trim());
-    if (model) parts.push(model);
+    if (sessionId) parts.push(`[${sessionId}]`);
     if (data.context_window && typeof data.context_window.used_percentage === 'number') {
         parts.push(`ctx:${pct}%`);
     }
 
     const cache = readCache();
     if (typeof cache.usedPercent === 'number') parts.push(`wk:${Math.floor(cache.usedPercent)}%`);
-    const resetAt = fmtTime(cache.resetsAt);
-    if (resetAt) parts.push(`reset ${resetAt}`);
+    const resetAt = formatReset(cache.resetsAt);
+    if (resetAt) parts.push(resetAt);
 
     process.stdout.write(parts.join(' | '));
+}
+
+function formatReset(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${y}-${m}-${day} ${h}:${min}`;
 }
 
 function readCache() {
     try { return JSON.parse(fs.readFileSync(cachePath, 'utf8')); }
     catch { return {}; }
-}
-
-function fmtTime(iso) {
-    if (!iso) return '';
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return '';
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function loadAuth() {
