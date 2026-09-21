@@ -1,0 +1,8 @@
+interface:
+  display_name: "Markdown 문서 포맷 정리"
+  short_description: "내용을 유지하며 Markdown 문서의 문체와 형식을 정리합니다."
+  default_prompt: >-
+    $ct-docs-md-format을 사용해 문서의 의미를 유지하면서
+    허용된 문체, Markdown 표현과 줄바꿈만 정리해 주세요.
+policy:
+  allow_implicit_invocation: true
