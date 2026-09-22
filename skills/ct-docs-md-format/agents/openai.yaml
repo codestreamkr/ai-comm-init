@@ -1,5 +1,5 @@
 interface:
-  display_name: "Markdown 문서 포맷 정리"
+  display_name: "ct-docs-md-format"
   short_description: "내용을 유지하며 Markdown 문서의 문체와 형식을 정리합니다."
   default_prompt: >-
     $ct-docs-md-format을 사용해 문서의 의미를 유지하면서
