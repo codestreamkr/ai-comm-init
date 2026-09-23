@@ -4,7 +4,6 @@
   "defaultModel": "claude-opus-5-5",
   "showCacheMissNotices": true,
   "enabledModels": [
-    "anthropic/claude-opus-5-5",
     "openai-codex/gpt-6-sol",
     "xai/grok-4.7"
   ]
