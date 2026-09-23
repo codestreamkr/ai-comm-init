@@ -13,6 +13,7 @@ $AgentsDir = if ($env:AGENTS_HOME) { $env:AGENTS_HOME } else { Join-Path $env:US
 $ClaudeDir = if ($env:CLAUDE_HOME) { $env:CLAUDE_HOME } else { Join-Path $env:USERPROFILE ".claude" }
 $CodexDir  = if ($env:CODEX_HOME)  { $env:CODEX_HOME }  else { Join-Path $env:USERPROFILE ".codex" }
 $GrokDir   = if ($env:GROK_HOME)   { $env:GROK_HOME }   else { Join-Path $env:USERPROFILE ".grok" }
+$GeminiDir = if ($env:GEMINI_HOME) { $env:GEMINI_HOME } else { Join-Path $env:USERPROFILE ".gemini" }
 
 function Get-BackupPath {
     param([string]$Path)
@@ -100,17 +101,17 @@ function Write-GrokStatuslineStub {
     ) -join "`n" | Set-Content -LiteralPath $Target -Encoding utf8NoBOM -NoNewline
 }
 
-function Remove-StaleClaudeSkills {
+function Remove-StaleSkills {
     param(
-        [string]$ClaudeSkillsDir,
+        [string]$TargetSkillsDir,
         [string]$AgentsSkillsDir
     )
 
-    if (-not (Test-Path $ClaudeSkillsDir)) {
+    if (-not (Test-Path $TargetSkillsDir)) {
         return
     }
 
-    Get-ChildItem $ClaudeSkillsDir | ForEach-Object {
+    Get-ChildItem $TargetSkillsDir | ForEach-Object {
         $Name = $_.Name
         if ($Name -like "*.backup-*") { return }
         if ($Name -notlike "ct-*") { return }
@@ -131,13 +132,13 @@ function Remove-StaleClaudeSkills {
 
 $script:SymlinkFallback = $false
 
-foreach ($Required in @("skills", "claude", "codex")) {
+foreach ($Required in @("skills", "claude", "codex", "agy")) {
     if (-not (Test-Path (Join-Path $SourceDir $Required))) {
         throw "Invalid installation source: $SourceDir (missing $Required\)"
     }
 }
 
-Write-Host "[1/3] Installing Skills ..." -ForegroundColor Cyan
+Write-Host "[1/4] Installing Skills ..." -ForegroundColor Cyan
 $AgentsSkillsDir = Join-Path $AgentsDir "skills"
 if ($SourceDir -eq $AgentsDir) {
     Write-Host "  source is already $AgentsDir"
@@ -150,40 +151,65 @@ if ($SourceDir -eq $AgentsDir) {
     if (Test-Path $SourceGrok) {
         Install-Item -Source $SourceGrok -Target (Join-Path $AgentsDir "grok") -Label "grok"
     }
+    $SourceAgy = Join-Path $SourceDir "agy"
+    if (Test-Path $SourceAgy) {
+        Install-Item -Source $SourceAgy -Target (Join-Path $AgentsDir "agy") -Label "agy"
+    }
 }
 
-Write-Host "[2/3] Linking Skills into Claude Code ..." -ForegroundColor Cyan
+Write-Host "[2/4] Linking Skills into Claude Code ..." -ForegroundColor Cyan
 $ClaudeSkillsDir = Join-Path $ClaudeDir "skills"
 New-Item -ItemType Directory -Path $ClaudeSkillsDir -Force | Out-Null
 Get-ChildItem $AgentsSkillsDir -Directory | Where-Object { $_.Name -notlike "*.backup-*" } | ForEach-Object {
     Install-Link -Source $_.FullName -Target (Join-Path $ClaudeSkillsDir $_.Name) -Label "skills\$($_.Name)"
 }
-Remove-StaleClaudeSkills -ClaudeSkillsDir $ClaudeSkillsDir -AgentsSkillsDir $AgentsSkillsDir
+Remove-StaleSkills -TargetSkillsDir $ClaudeSkillsDir -AgentsSkillsDir $AgentsSkillsDir
 
-Write-Host "[3/3] Linking Grok statusline ..." -ForegroundColor Cyan
+Write-Host "[3/4] Linking Skills into Antigravity (agy) ..." -ForegroundColor Cyan
+$AgySkillsDir = Join-Path $GeminiDir "config\skills"
+New-Item -ItemType Directory -Path $AgySkillsDir -Force | Out-Null
+Get-ChildItem $AgentsSkillsDir -Directory | Where-Object { $_.Name -notlike "*.backup-*" } | ForEach-Object {
+    Install-Link -Source $_.FullName -Target (Join-Path $AgySkillsDir $_.Name) -Label "skills\$($_.Name)"
+}
+Remove-StaleSkills -TargetSkillsDir $AgySkillsDir -AgentsSkillsDir $AgentsSkillsDir
+
+Write-Host "[4/4] Linking Grok files ..." -ForegroundColor Cyan
 $GrokStatuslineSource = Join-Path $AgentsDir "grok\statusline.js"
 $GrokStatuslineTarget = Join-Path $GrokDir "statusline.js"
-if (Test-Path $GrokStatuslineSource) {
+$GrokInstructionsSource = Join-Path $AgentsDir "grok\AGENTS.md"
+$GrokInstructionsTarget = Join-Path $GrokDir "AGENTS.md"
+if ((Test-Path $GrokStatuslineSource) -or (Test-Path $GrokInstructionsSource)) {
     New-Item -ItemType Directory -Path $GrokDir -Force | Out-Null
+}
+if (Test-Path $GrokStatuslineSource) {
     Install-Link -Source $GrokStatuslineSource -Target $GrokStatuslineTarget -Label "grok\statusline.js" -Fallback {
         Write-GrokStatuslineStub -Target $GrokStatuslineTarget -AgentsHome $AgentsDir
     }
 } else {
     Write-Host "  skipped: grok\statusline.js not found"
 }
+if (Test-Path $GrokInstructionsSource) {
+    Install-Link -Source $GrokInstructionsSource -Target $GrokInstructionsTarget -Label "grok\AGENTS.md"
+} else {
+    Write-Host "  skipped: grok\AGENTS.md not found"
+}
 
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green
 Write-Host "  Skills: $AgentsSkillsDir"
+Write-Host "  Claude skills: $ClaudeSkillsDir -> $AgentsSkillsDir"
+Write-Host "  Antigravity skills: $AgySkillsDir -> $AgentsSkillsDir"
 Write-Host "  Grok statusline: $GrokStatuslineTarget -> $GrokStatuslineSource"
+Write-Host "  Grok instructions: $GrokInstructionsTarget -> $GrokInstructionsSource"
 Write-Host ""
 Write-Host "Next:"
 Write-Host "  - Claude Code: ask to review and merge $(Join-Path $SourceDir 'claude') into $ClaudeDir."
 Write-Host "  - Codex: ask to merge $(Join-Path $SourceDir 'codex\config.toml') into $(Join-Path $CodexDir 'config.toml')."
+Write-Host "  - Antigravity (agy): ask to review and merge $(Join-Path $SourceDir 'agy') into $GeminiDir."
 Write-Host "  - Grok: keep $GrokDir\config.toml machine-local; it should run the linked statusline.js."
 
 if ($script:SymlinkFallback) {
     Write-Host ""
-    Write-Host "Note: symbolic links were unavailable, so Skills were copied and Grok statusline was stubbed." -ForegroundColor Yellow
+    Write-Host "Note: symbolic links were unavailable, so some files were copied or stubbed." -ForegroundColor Yellow
     Write-Host "      Enable Developer Mode or run as administrator, then rerun to link them."
 }

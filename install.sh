@@ -10,6 +10,7 @@ AGENTS_DIR="${AGENTS_HOME:-$HOME/.agents}"
 CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 GROK_DIR="${GROK_HOME:-$HOME/.grok}"
+GEMINI_DIR="${GEMINI_HOME:-$HOME/.gemini}"
 FORCE=false
 
 if [ "${1:-}" = "--force" ]; then
@@ -71,13 +72,13 @@ link_item() {
     echo "  linked: $label"
 }
 
-remove_stale_claude_skills() {
-    claude_skills="$1"
+remove_stale_skills() {
+    target_skills="$1"
     agents_skills="$2"
 
-    [ -d "$claude_skills" ] || return 0
+    [ -d "$target_skills" ] || return 0
 
-    for target in "$claude_skills"/*; do
+    for target in "$target_skills"/*; do
         [ -e "$target" ] || [ -L "$target" ] || continue
         name="$(basename "$target")"
         case "$name" in *.backup-*) continue ;; esac
@@ -99,14 +100,14 @@ remove_stale_claude_skills() {
     done
 }
 
-for required in skills claude codex; do
+for required in skills claude codex agy; do
     if [ ! -d "$SOURCE_DIR/$required" ]; then
         echo "Invalid installation source: $SOURCE_DIR (missing $required/)" >&2
         exit 1
     fi
 done
 
-echo "[1/3] Installing Skills ..."
+echo "[1/4] Installing Skills ..."
 if [ "$SOURCE_DIR" = "$AGENTS_DIR" ]; then
     echo "  source is already $AGENTS_DIR"
 else
@@ -119,9 +120,12 @@ else
     if [ -d "$SOURCE_DIR/grok" ]; then
         install_item "$SOURCE_DIR/grok" "$AGENTS_DIR/grok" "grok"
     fi
+    if [ -d "$SOURCE_DIR/agy" ]; then
+        install_item "$SOURCE_DIR/agy" "$AGENTS_DIR/agy" "agy"
+    fi
 fi
 
-echo "[2/3] Linking Skills into Claude Code ..."
+echo "[2/4] Linking Skills into Claude Code ..."
 mkdir -p "$CLAUDE_DIR/skills"
 for skill in "$AGENTS_DIR"/skills/*; do
     [ -d "$skill" ] || continue
@@ -129,22 +133,43 @@ for skill in "$AGENTS_DIR"/skills/*; do
     case "$name" in *.backup-*) continue ;; esac
     link_item "$skill" "$CLAUDE_DIR/skills/$name" "skills/$name"
 done
-remove_stale_claude_skills "$CLAUDE_DIR/skills" "$AGENTS_DIR/skills"
+remove_stale_skills "$CLAUDE_DIR/skills" "$AGENTS_DIR/skills"
 
-echo "[3/3] Linking Grok statusline ..."
-if [ -f "$AGENTS_DIR/grok/statusline.js" ]; then
+echo "[3/4] Linking Skills into Antigravity (agy) ..."
+mkdir -p "$GEMINI_DIR/config/skills"
+for skill in "$AGENTS_DIR"/skills/*; do
+    [ -d "$skill" ] || continue
+    name="$(basename "$skill")"
+    case "$name" in *.backup-*) continue ;; esac
+    link_item "$skill" "$GEMINI_DIR/config/skills/$name" "skills/$name"
+done
+remove_stale_skills "$GEMINI_DIR/config/skills" "$AGENTS_DIR/skills"
+
+echo "[4/4] Linking Grok files ..."
+if [ -f "$AGENTS_DIR/grok/statusline.js" ] || [ -f "$AGENTS_DIR/grok/AGENTS.md" ]; then
     mkdir -p "$GROK_DIR"
+fi
+if [ -f "$AGENTS_DIR/grok/statusline.js" ]; then
     link_item "$AGENTS_DIR/grok/statusline.js" "$GROK_DIR/statusline.js" "grok/statusline.js"
 else
     echo "  skipped: grok/statusline.js not found"
+fi
+if [ -f "$AGENTS_DIR/grok/AGENTS.md" ]; then
+    link_item "$AGENTS_DIR/grok/AGENTS.md" "$GROK_DIR/AGENTS.md" "grok/AGENTS.md"
+else
+    echo "  skipped: grok/AGENTS.md not found"
 fi
 
 echo ""
 echo "Done."
 echo "  Skills: $AGENTS_DIR/skills"
+echo "  Claude skills: $CLAUDE_DIR/skills -> $AGENTS_DIR/skills"
+echo "  Antigravity skills: $GEMINI_DIR/config/skills -> $AGENTS_DIR/skills"
 echo "  Grok statusline: $GROK_DIR/statusline.js -> $AGENTS_DIR/grok/statusline.js"
+echo "  Grok instructions: $GROK_DIR/AGENTS.md -> $AGENTS_DIR/grok/AGENTS.md"
 echo ""
 echo "Next:"
 echo "  - Claude Code: ask to review and merge $SOURCE_DIR/claude into $CLAUDE_DIR."
 echo "  - Codex: ask to merge $SOURCE_DIR/codex/config.toml into $CODEX_DIR/config.toml."
+echo "  - Antigravity (agy): ask to review and merge $SOURCE_DIR/agy into $GEMINI_DIR."
 echo "  - Grok: keep $GROK_DIR/config.toml machine-local; it should run the linked statusline.js."
