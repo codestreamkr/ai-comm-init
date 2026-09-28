@@ -24,7 +24,45 @@ git clone https://github.com/codestreamkr/ai-comm-init.git $env:USERPROFILE\.age
 
 정본은 이 저장소(`~/.agents`)다. `~/.claude`, `~/.codex`, `~/.grok`, `~/.gemini`, `~/.pi/agent`는 정본을 가져다 쓰는 런타임 홈이다.
 
-## 2. 스킬 배치
+## 2. 스킬 정본과 배치
+
+모든 공통 사용자 스킬의 원본은 `~/.agents/skills/<skill-name>`이다. 각 AI 런타임의
+스킬 디렉터리에는 이 원본을 가리키는 링크를 두며, 스킬을 수정할 때는 원본만 변경한다.
+런타임이 자체 관리하는 시스템 스킬은 제외한다.
+
+| AI 런타임 | 링크 위치 |
+| --- | --- |
+| Claude Code | `~/.claude/skills/<skill-name>` |
+| Codex | `~/.codex/skills/<skill-name>` |
+| Antigravity(Gemini) | `~/.gemini/config/skills/<skill-name>` |
+| Grok | `~/.grok/skills/<skill-name>` |
+| Pi | `~/.pi/agent/skills/<skill-name>` |
+
+Windows에서 심볼릭 링크 권한이 없으면 같은 원본을 가리키는 디렉터리 Junction을 사용한다.
+
+### OpenSpec 출처 및 로컬 정본
+
+OpenSpec 스킬은 Fission AI의 OpenSpec 프로젝트에서 생성된 파일을 가져와 사용한다.
+
+- 원출처: [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec)
+- 공식 문서: [openspec.dev](https://openspec.dev/)
+- 배포 패키지: [`@fission-ai/openspec`](https://www.npmjs.com/package/@fission-ai/openspec)
+- 라이선스: [MIT License](https://github.com/Fission-AI/OpenSpec/blob/main/LICENSE)
+- 가져온 생성 버전: `1.13.2`
+
+생성 버전은 각 `SKILL.md`의 `metadata.generatedBy`에 기록되어 있다. 이 저장소에서 관리하는
+로컬 정본은 다음과 같다.
+
+- `~/.agents/skills/openspec-explore`
+- `~/.agents/skills/openspec-propose`
+- `~/.agents/skills/openspec-update-change`
+- `~/.agents/skills/openspec-apply-change`
+- `~/.agents/skills/openspec-sync-specs`
+- `~/.agents/skills/openspec-archive-change`
+
+각 OpenSpec 스킬을 실행하려면 OpenSpec CLI가 필요하다.
+
+### 설치
 
 ```bash
 bash ~/.agents/install.sh          # 기존 파일 보존
@@ -36,7 +74,10 @@ bash ~/.agents/install.sh --force  # 기존 파일 백업 후 덮어쓰기
 & "$env:USERPROFILE\.agents\install.ps1" -Force
 ```
 
-설치는 `~/.claude/skills` 및 `~/.gemini/config/skills`에 스킬을 링크하고, Grok의 `statusline.js`와 `AGENTS.md`를 `~/.grok`에 링크한다.
+설치 스크립트는 `~/.claude/skills` 및 `~/.gemini/config/skills`에 스킬을 링크하고,
+Grok의 `statusline.js`와 `AGENTS.md`를 `~/.grok`에 링크한다. Codex와 Pi는
+`~/.agents/skills`를 자동으로 발견한다. Grok을 포함해 런타임별 링크를 직접 구성할 때도
+원본은 `~/.agents/skills`를 사용한다.
 
 ## 3. 전역 설정 적용
 
@@ -57,7 +98,8 @@ bash ~/.agents/install.sh --force  # 기존 파일 백업 후 덮어쓰기
 - Antigravity (agy): `~/.agents/agy/settings.json`을 해당 런타임 설정에 병합해줘.
 - Pi: `~/.agents/pi/settings.json`을 `~/.pi/agent/settings.json`에 병합해줘.
 
-병합 시 기존 설정을 유지한다. Pi는 `~/.agents/skills`의 스킬을 자동으로 발견하므로 별도 링크가 필요 없다.
+병합 시 기존 설정을 유지한다. Codex와 Pi는 `~/.agents/skills`의 스킬을 자동으로 발견하므로
+별도 링크 없이도 사용할 수 있다.
 
 파일 전체를 정본으로 관리하는 Grok `statusline.js`는 설치 스크립트가 `~/.grok/statusline.js`에 링크한다. Grok 전역 지침은 별도 `AGENTS.md`로 관리해 나중에 Claude 지침과 독립적으로 수정할 수 있다. Grok `config.toml`과 훅은 머신 로컬이다. 상태줄 `command`는 연결된 `~/.grok/statusline.js`를 실행하면 된다.
 

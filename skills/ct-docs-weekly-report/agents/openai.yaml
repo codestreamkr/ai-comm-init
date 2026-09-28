@@ -1,0 +1,4 @@
+interface:
+  display_name: "ct-docs-weekly-report"
+  short_description: "Git 이력으로 브랜치별 업무 보고서 파일을 생성합니다"
+  default_prompt: "$ct-docs-weekly-report를 사용해 현재 브랜치의 업무 보고서 파일을 생성해 주세요."
