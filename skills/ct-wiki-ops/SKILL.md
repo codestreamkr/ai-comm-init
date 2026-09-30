@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # CT Wiki Ops
 
-정본은 프로젝트의 `LLM-WIKI.md`, 확인 가능한 원문·코드와 현재 위키다. 코드 정본 구현 문서는 `ct-docs-impl`, 원격 Confluence 입출력은 `ct-wiki-api`의 범위다.
+정본은 프로젝트의 `LLM-WIKI.md`, 확인 가능한 원문·코드와 현재 위키다. 코드 정본 구현 문서의 작성·갱신은 `ct-apply`, 원격 Confluence 입출력은 `ct-wiki-api`의 범위다.
 
 ## 호출
 

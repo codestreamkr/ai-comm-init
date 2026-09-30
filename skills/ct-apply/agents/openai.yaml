@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-apply"
+  short_description: "남은 개발 작업을 구현·검증하고 재개"
+  default_prompt: "$ct-apply 역할, 필요한 입력과 예제를 안내해 주세요."
+policy:
+  allow_implicit_invocation: false

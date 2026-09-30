@@ -1,6 +1,0 @@
-interface:
-  display_name: "ct-code-tree"
-  short_description: "현재 코드의 실제 호출과 데이터 흐름 분석"
-  default_prompt: "$ct-code-tree 역할, 필요한 입력과 대표 예제를 안내해 주세요."
-policy:
-  allow_implicit_invocation: false

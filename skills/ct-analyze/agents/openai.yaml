@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-analyze"
+  short_description: "현재 코드 근거로 동작과 영향 범위 분석"
+  default_prompt: "$ct-analyze 역할, 필요한 입력과 예제를 안내해 주세요."
+policy:
+  allow_implicit_invocation: false
