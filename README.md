@@ -40,28 +40,6 @@ git clone https://github.com/codestreamkr/ai-comm-init.git $env:USERPROFILE\.age
 
 Windows에서 심볼릭 링크 권한이 없으면 같은 원본을 가리키는 디렉터리 Junction을 사용한다.
 
-### OpenSpec 출처 및 로컬 정본
-
-OpenSpec 스킬은 Fission AI의 OpenSpec 프로젝트에서 생성된 파일을 가져와 사용한다.
-
-- 원출처: [Fission-AI/OpenSpec](https://github.com/Fission-AI/OpenSpec)
-- 공식 문서: [openspec.dev](https://openspec.dev/)
-- 배포 패키지: [`@fission-ai/openspec`](https://www.npmjs.com/package/@fission-ai/openspec)
-- 라이선스: [MIT License](https://github.com/Fission-AI/OpenSpec/blob/main/LICENSE)
-- 가져온 생성 버전: `1.13.2`
-
-생성 버전은 각 `SKILL.md`의 `metadata.generatedBy`에 기록되어 있다. 이 저장소에서 관리하는
-로컬 정본은 다음과 같다.
-
-- `~/.agents/skills/openspec-explore`
-- `~/.agents/skills/openspec-propose`
-- `~/.agents/skills/openspec-update-change`
-- `~/.agents/skills/openspec-apply-change`
-- `~/.agents/skills/openspec-sync-specs`
-- `~/.agents/skills/openspec-archive-change`
-
-각 OpenSpec 스킬을 실행하려면 OpenSpec CLI가 필요하다.
-
 ### 설치
 
 ```bash
