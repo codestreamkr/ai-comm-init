@@ -1,6 +1,6 @@
 interface:
   display_name: "ct-docs-md-format"
   short_description: "Markdown 문서를 생성하거나 기존 문서 형식을 정리합니다."
-  default_prompt: "$ct-docs-md-format을 사용해 결과를 Markdown 파일로 생성하거나 기존 Markdown 파일의 의미를 유지하며 형식을 정리해 주세요."
+  default_prompt: "$ct-docs-md-format을 사용해 결과를 Markdown 파일로 만들어 주세요. 기존 Markdown 파일은 의미를 유지하고 형식만 정리해 주세요."
 policy:
   allow_implicit_invocation: true
