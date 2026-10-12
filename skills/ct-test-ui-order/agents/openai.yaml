@@ -1,0 +1,4 @@
+interface:
+  display_name: "ct-test-ui-order"
+  short_description: "상품과 결제수단별 주문 UI 테스트 실행·재개 및 결과 수집"
+  default_prompt: "$ct-test-ui-order로 환경파일의 주문 결제 UI 테스트를 실행하고 결과를 보고해줘."
