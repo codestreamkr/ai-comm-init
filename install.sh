@@ -11,6 +11,7 @@ CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
 GROK_DIR="${GROK_HOME:-$HOME/.grok}"
 GEMINI_DIR="${GEMINI_HOME:-$HOME/.gemini}"
+PI_DIR="${PI_HOME:-$HOME/.pi/agent}"
 FORCE=false
 
 if [ "${1:-}" = "--force" ]; then
@@ -107,7 +108,7 @@ for required in skills claude codex agy; do
     fi
 done
 
-echo "[1/4] Installing Skills ..."
+echo "[1/2] Installing source files ..."
 if [ "$SOURCE_DIR" = "$AGENTS_DIR" ]; then
     echo "  source is already $AGENTS_DIR"
 else
@@ -117,59 +118,55 @@ else
         name="$(basename "$skill")"
         install_item "$skill" "$AGENTS_DIR/skills/$name" "skills/$name"
     done
-    if [ -d "$SOURCE_DIR/grok" ]; then
-        install_item "$SOURCE_DIR/grok" "$AGENTS_DIR/grok" "grok"
+    for runtime in claude codex agy grok pi; do
+        [ -d "$SOURCE_DIR/$runtime" ] || continue
+        install_item "$SOURCE_DIR/$runtime" "$AGENTS_DIR/$runtime" "$runtime"
+    done
+fi
+
+# A settings directory alone does not prove that a CLI is installed.
+link_runtime() {
+    local label="$1" source_dir="$2" runtime_home="$3" instructions="$4"
+    shift 4
+    local installed=false command_name skill name
+    for command_name in "$@"; do
+        if command -v "$command_name" >/dev/null 2>&1; then
+            installed=true
+            break
+        fi
+    done
+    if [ "$installed" != true ]; then
+        echo "  skipped: $label (CLI not found in PATH)"
+        return
     fi
-    if [ -d "$SOURCE_DIR/agy" ]; then
-        install_item "$SOURCE_DIR/agy" "$AGENTS_DIR/agy" "agy"
+
+    echo "  detected: $label ($command_name)"
+    mkdir -p "$runtime_home/skills"
+    if [ -f "$AGENTS_DIR/$source_dir/$instructions" ]; then
+        link_item "$AGENTS_DIR/$source_dir/$instructions" "$runtime_home/$instructions" "$label/$instructions"
+    else
+        echo "  skipped: $source_dir/$instructions not found"
     fi
-fi
+    for skill in "$AGENTS_DIR"/skills/*; do
+        [ -d "$skill" ] || continue
+        name="$(basename "$skill")"
+        case "$name" in *.backup-*) continue ;; esac
+        link_item "$skill" "$runtime_home/skills/$name" "$label/skills/$name"
+    done
+    remove_stale_skills "$runtime_home/skills" "$AGENTS_DIR/skills"
+    if [ "$source_dir" = grok ] && [ -f "$AGENTS_DIR/grok/statusline.js" ]; then
+        link_item "$AGENTS_DIR/grok/statusline.js" "$runtime_home/statusline.js" "grok/statusline.js"
+    fi
+}
 
-echo "[2/4] Linking Skills into Claude Code ..."
-mkdir -p "$CLAUDE_DIR/skills"
-for skill in "$AGENTS_DIR"/skills/*; do
-    [ -d "$skill" ] || continue
-    name="$(basename "$skill")"
-    case "$name" in *.backup-*) continue ;; esac
-    link_item "$skill" "$CLAUDE_DIR/skills/$name" "skills/$name"
-done
-remove_stale_skills "$CLAUDE_DIR/skills" "$AGENTS_DIR/skills"
-
-echo "[3/4] Linking Skills into Antigravity (agy) ..."
-mkdir -p "$GEMINI_DIR/config/skills"
-for skill in "$AGENTS_DIR"/skills/*; do
-    [ -d "$skill" ] || continue
-    name="$(basename "$skill")"
-    case "$name" in *.backup-*) continue ;; esac
-    link_item "$skill" "$GEMINI_DIR/config/skills/$name" "skills/$name"
-done
-remove_stale_skills "$GEMINI_DIR/config/skills" "$AGENTS_DIR/skills"
-
-echo "[4/4] Linking Grok files ..."
-if [ -f "$AGENTS_DIR/grok/statusline.js" ] || [ -f "$AGENTS_DIR/grok/AGENTS.md" ]; then
-    mkdir -p "$GROK_DIR"
-fi
-if [ -f "$AGENTS_DIR/grok/statusline.js" ]; then
-    link_item "$AGENTS_DIR/grok/statusline.js" "$GROK_DIR/statusline.js" "grok/statusline.js"
-else
-    echo "  skipped: grok/statusline.js not found"
-fi
-if [ -f "$AGENTS_DIR/grok/AGENTS.md" ]; then
-    link_item "$AGENTS_DIR/grok/AGENTS.md" "$GROK_DIR/AGENTS.md" "grok/AGENTS.md"
-else
-    echo "  skipped: grok/AGENTS.md not found"
-fi
+echo "[2/2] Detecting installed AI CLIs and linking instructions and skills ..."
+link_runtime "Claude Code" claude "$CLAUDE_DIR" CLAUDE.md claude
+link_runtime "Codex" codex "$CODEX_DIR" AGENTS.md codex
+link_runtime "Antigravity / Gemini" agy "$GEMINI_DIR/config" GEMINI.md agy antigravity gemini
+link_runtime "Grok" grok "$GROK_DIR" AGENTS.md grok
+link_runtime "Pi" pi "$PI_DIR" AGENTS.md pi
 
 echo ""
-echo "Done."
-echo "  Skills: $AGENTS_DIR/skills"
-echo "  Claude skills: $CLAUDE_DIR/skills -> $AGENTS_DIR/skills"
-echo "  Antigravity skills: $GEMINI_DIR/config/skills -> $AGENTS_DIR/skills"
-echo "  Grok statusline: $GROK_DIR/statusline.js -> $AGENTS_DIR/grok/statusline.js"
-echo "  Grok instructions: $GROK_DIR/AGENTS.md -> $AGENTS_DIR/grok/AGENTS.md"
-echo ""
-echo "Next:"
-echo "  - Claude Code: ask to review and merge $SOURCE_DIR/claude into $CLAUDE_DIR."
-echo "  - Codex: ask to merge $SOURCE_DIR/codex/config.toml into $CODEX_DIR/config.toml."
-echo "  - Antigravity (agy): ask to review and merge $SOURCE_DIR/agy into $GEMINI_DIR."
-echo "  - Grok: keep $GROK_DIR/config.toml machine-local; it should run the linked statusline.js."
+echo "Done. Source: $AGENTS_DIR"
+echo "Existing files are preserved; use --force to back them up and replace them with links."
+echo "Machine-local settings.json and config.toml files must be reviewed and merged separately."
