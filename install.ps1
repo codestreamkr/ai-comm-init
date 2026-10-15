@@ -115,12 +115,12 @@ if ($SourceDir -eq $AgentsDir) {
 } else {
     New-Item -ItemType Directory -Path $AgentsSkillsDir -Force | Out-Null
     Get-ChildItem (Join-Path $SourceDir "skills") -Directory | ForEach-Object {
-        Install-Item -Source $_.FullName -Target (Join-Path $AgentsSkillsDir $_.Name) -Label "skills\$($_.Name)"
+        Install-Item -Source $_.FullName -Target (Join-Path $AgentsSkillsDir $_.Name) -Label "skills\$($_.Name)" 6>$null
     }
     foreach ($Runtime in @("claude", "codex", "agy", "grok", "pi")) {
         $SourceRuntime = Join-Path $SourceDir $Runtime
         if (Test-Path $SourceRuntime) {
-            Install-Item -Source $SourceRuntime -Target (Join-Path $AgentsDir $Runtime) -Label $Runtime
+            Install-Item -Source $SourceRuntime -Target (Join-Path $AgentsDir $Runtime) -Label $Runtime 6>$null
         }
     }
 }
@@ -144,23 +144,23 @@ function Install-Runtime {
         Write-Host "  skipped: $Label (CLI not found in PATH)"
         return
     }
-    Write-Host "  detected: $Label ($Detected)"
     $SkillsDir = Join-Path $RuntimeHome "skills"
     New-Item -ItemType Directory -Path $SkillsDir -Force | Out-Null
     $InstructionsSource = Join-Path (Join-Path $AgentsDir $SourceName) $Instructions
     if (Test-Path -LiteralPath $InstructionsSource) {
-        Install-Link -Source $InstructionsSource -Target (Join-Path $RuntimeHome $Instructions) -Label "$Label/$Instructions"
+        Install-Link -Source $InstructionsSource -Target (Join-Path $RuntimeHome $Instructions) -Label "$Label/$Instructions" 6>$null
     } else {
         Write-Host "  skipped: $SourceName/$Instructions not found"
     }
     Get-ChildItem -LiteralPath $AgentsSkillsDir -Directory | Where-Object { $_.Name -notlike "*.backup-*" } | ForEach-Object {
-        Install-Link -Source $_.FullName -Target (Join-Path $SkillsDir $_.Name) -Label "$Label/skills/$($_.Name)"
+        Install-Link -Source $_.FullName -Target (Join-Path $SkillsDir $_.Name) -Label "$Label/skills/$($_.Name)" 6>$null
     }
-    Remove-StaleSkills -TargetSkillsDir $SkillsDir -AgentsSkillsDir $AgentsSkillsDir
+    Remove-StaleSkills -TargetSkillsDir $SkillsDir -AgentsSkillsDir $AgentsSkillsDir 6>$null
     $StatuslineSource = Join-Path $AgentsDir "grok/statusline.js"
     if ($SourceName -eq "grok" -and (Test-Path -LiteralPath $StatuslineSource)) {
-        Install-Link -Source $StatuslineSource -Target (Join-Path $RuntimeHome "statusline.js") -Label "grok/statusline.js"
+        Install-Link -Source $StatuslineSource -Target (Join-Path $RuntimeHome "statusline.js") -Label "grok/statusline.js" 6>$null
     }
+    Write-Host "  완료: $Label"
 }
 
 Write-Host "[2/2] Detecting installed AI CLIs and linking instructions and skills ..." -ForegroundColor Cyan

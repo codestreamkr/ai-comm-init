@@ -14,6 +14,11 @@ GEMINI_DIR="${GEMINI_HOME:-$HOME/.gemini}"
 PI_DIR="${PI_HOME:-$HOME/.pi/agent}"
 FORCE=false
 
+# Native Claude installations may not yet be on the calling shell's PATH.
+if ! command -v claude >/dev/null 2>&1 && [ -x "$HOME/.local/bin/claude" ]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 if [ "${1:-}" = "--force" ]; then
     FORCE=true
 elif [ "$#" -gt 0 ]; then
@@ -26,9 +31,8 @@ backup_path() {
 }
 
 install_item() {
-    source_path="$1"
-    target_path="$2"
-    label="$3"
+    local source_path="$1" target_path="$2" label="$3"
+    local backup
 
     if [ -e "$target_path" ] || [ -L "$target_path" ]; then
         if [ "$FORCE" != true ]; then
@@ -46,9 +50,8 @@ install_item() {
 }
 
 link_item() {
-    source_path="$1"
-    target_path="$2"
-    label="$3"
+    local source_path="$1" target_path="$2" label="$3"
+    local backup current
 
     if [ -L "$target_path" ]; then
         current="$(readlink -- "$target_path")"
@@ -74,8 +77,8 @@ link_item() {
 }
 
 remove_stale_skills() {
-    target_skills="$1"
-    agents_skills="$2"
+    local target_skills="$1" agents_skills="$2"
+    local target name backup
 
     [ -d "$target_skills" ] || return 0
 
@@ -116,11 +119,11 @@ else
     for skill in "$SOURCE_DIR"/skills/*; do
         [ -d "$skill" ] || continue
         name="$(basename "$skill")"
-        install_item "$skill" "$AGENTS_DIR/skills/$name" "skills/$name"
+        install_item "$skill" "$AGENTS_DIR/skills/$name" "skills/$name" > /dev/null
     done
     for runtime in claude codex agy grok pi; do
         [ -d "$SOURCE_DIR/$runtime" ] || continue
-        install_item "$SOURCE_DIR/$runtime" "$AGENTS_DIR/$runtime" "$runtime"
+        install_item "$SOURCE_DIR/$runtime" "$AGENTS_DIR/$runtime" "$runtime" > /dev/null
     done
 fi
 
@@ -140,10 +143,9 @@ link_runtime() {
         return
     fi
 
-    echo "  detected: $label ($command_name)"
     mkdir -p "$runtime_home/skills"
     if [ -f "$AGENTS_DIR/$source_dir/$instructions" ]; then
-        link_item "$AGENTS_DIR/$source_dir/$instructions" "$runtime_home/$instructions" "$label/$instructions"
+        link_item "$AGENTS_DIR/$source_dir/$instructions" "$runtime_home/$instructions" "$label/$instructions" > /dev/null
     else
         echo "  skipped: $source_dir/$instructions not found"
     fi
@@ -151,12 +153,13 @@ link_runtime() {
         [ -d "$skill" ] || continue
         name="$(basename "$skill")"
         case "$name" in *.backup-*) continue ;; esac
-        link_item "$skill" "$runtime_home/skills/$name" "$label/skills/$name"
+        link_item "$skill" "$runtime_home/skills/$name" "$label/skills/$name" > /dev/null
     done
-    remove_stale_skills "$runtime_home/skills" "$AGENTS_DIR/skills"
+    remove_stale_skills "$runtime_home/skills" "$AGENTS_DIR/skills" > /dev/null
     if [ "$source_dir" = grok ] && [ -f "$AGENTS_DIR/grok/statusline.js" ]; then
-        link_item "$AGENTS_DIR/grok/statusline.js" "$runtime_home/statusline.js" "grok/statusline.js"
+        link_item "$AGENTS_DIR/grok/statusline.js" "$runtime_home/statusline.js" "grok/statusline.js" > /dev/null
     fi
+    echo "  완료: $label"
 }
 
 echo "[2/2] Detecting installed AI CLIs and linking instructions and skills ..."
