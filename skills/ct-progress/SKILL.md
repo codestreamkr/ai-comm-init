@@ -31,6 +31,7 @@ ct 스킬이 지금 어느 단계에서 무엇을 하는지 프로세스 맵에 
 | 0 | 맵 서버가 실행 중이다. | 다시 열지 않는다. 출력된 주소를 쓴다. |
 | 1 | 맵 서버가 꺼져 있다. | 서버를 연다. |
 | 2 | 다른 프로그램이 그 포트를 쓴다. | 다른 포트(`--port N`)로 상태를 다시 확인하고 연다. |
+| 3 | 다른 버전의 맵 서버가 실행 중이다. | `node <skill-dir>/scripts/map.js stop [--port N]`으로 끄고 서버를 다시 연다. `stop`이 실패하면 그 포트를 쓰는 프로세스를 종료한다. |
 
 - 실행 흐름의 첫 스킬: `ct-plan`, 또는 단독으로 실행한 `ct-analyze`, `ct-apply`, `ct-verify`, `ct-debrief`
 - 서버는 셸에서 백그라운드로 실행한다. 명령: `node <skill-dir>/scripts/map.js serve [--port N]`
@@ -59,9 +60,10 @@ ct 스킬이 지금 어느 단계에서 무엇을 하는지 프로세스 맵에 
 
 | 시점 | 이벤트 |
 |---|---|
-| 스킬 시작 | `{"run":"apply-1","skill":"ct-apply","title":"주문 취소","steps":[{"id":"a1","name":"취소 상태 전이"},{"id":"v1","name":"테스트 실행","agent":"claude-haiku-5-5","after":["a1"]},{"id":"d1","name":"이해 확인","user":true,"after":["v1"]}]}` |
+| 스킬 시작 | `{"run":"apply-1","skill":"ct-apply","title":"주문 취소","model":"claude-opus-5-5","usage":{"file":"<사용량 기록>","kind":"message"},"steps":[{"id":"a1","name":"취소 상태 전이"},{"id":"v1","name":"테스트 실행","agent":"claude-haiku-5-5","after":["a1"]},{"id":"d1","name":"이해 확인","user":true,"after":["v1"]}]}` |
 | 단계 상태 변경 | `{"run":"apply-1","step":"a1","s":"start"}` |
-| 단계 완료 | `{"run":"apply-1","step":"a1","s":"done","tok":14300}` |
+| 단계 완료 | `{"run":"apply-1","step":"a1","s":"done"}` |
+| 서브에이전트 단계 완료 | `{"run":"apply-1","step":"v1","s":"done","usage":{"file":"<서브에이전트 사용량 기록>","kind":"message"}}` |
 | 사용자 응답 대기 | `{"run":"apply-1","step":"d1","s":"wait","ask":"질문 내용"}` |
 | 단계 추가 | `{"run":"apply-1","add":{"id":"f1","name":"부분 환불 수정","after":["v1"]}}` |
 | 선행 단계 변경 | `{"run":"apply-1","add":{"id":"d1","after":["f1"]}}` |
@@ -72,21 +74,49 @@ ct 스킬이 지금 어느 단계에서 무엇을 하는지 프로세스 맵에 
 - `steps`에는 그 실행에서 실제로 할 일만 쓴다. 고정 목록을 쓰지 않는다.
 - `s` 값: `start`, `done`, `fail`, `wait`, `skip`
 - `after`는 선행 단계 id 목록이다. 같은 선행 단계를 가진 단계는 병렬로 표시된다.
-- `agent`에는 버전을 포함한 서브에이전트 모델 이름을 쓴다. 예: `claude-haiku-5-5`. 별칭(`haiku`)만 알면 별칭을 쓴다. 완료 때 실제 모델로 다시 표시된다.
+- `agent`에는 버전을 포함한 서브에이전트 모델 이름을 쓴다. 예: `claude-haiku-5-5`
 - 사용자가 하는 단계는 `"user":true`로 표시한다.
 - 응답 대기 이벤트는 사용자에게 질문하기 전에 보낸다.
 - ADR 상태 값: `cand`(후보, 기본값), `ok`(확정), `drop`(폐기)
 
 ## 모델과 토큰
 
-- 메인 모델과 메인 단계의 토큰은 `map.js`가 세션 기록에서 자동으로 채운다. 직접 보내지 않는다.
-- 자동으로 읽는 세션 기록: Claude Code, Codex. 찾는 순서는 셸 현재 폴더, 대상 저장소, 최근 10분 안에 갱신된 세션 기록이다.
-- 메인 단계의 완료 이벤트에는 그 시점의 메인 모델(`m`)이 채워진다. 메인이 중간에 모델을 바꾸면 단계마다 다른 모델이 표시된다.
-- 서브에이전트 단계(`agent`가 있는 단계)의 모델과 토큰도 Claude Code에서는 자동으로 채운다. 서브에이전트 기록(`<세션>/subagents/`)을 읽는다.
-- 서브에이전트 id를 알면 완료 이벤트에 `"sub":"<id>"`를 넣는다. 없으면 단계 시작 이후 갱신된 최신 서브에이전트 기록을 쓴다.
-- 다른 런타임에서는 서브에이전트 결과에 사용량이 있으면 `tok`으로 보낸다. 확인할 수 없으면 보내지 않는다.
+### 모델
+
+- 모델 이름은 에이전트가 직접 보낸다. `map.js`는 모델을 추측하지 않는다.
+- 메인 모델은 실행 시작 이벤트의 `model`에 버전을 포함해 쓴다. 예: `claude-opus-5-5`
+- 메인 모델이 실행 중에 바뀌면 그 뒤 단계의 완료 이벤트에 `m`을 넣는다.
+- 서브에이전트 모델은 단계의 `agent`에 쓴다.
+
+### 토큰
+
 - 토큰은 새 입력과 출력의 합이다. 캐시에서 다시 읽은 입력은 제외한다.
-- 세션 기록을 읽을 수 없는 런타임에서는 모델과 메인 토큰이 비어 있다.
+- 메인 단계 토큰은 누적 사용량의 차이다: 완료 시각의 누적 - 시작 시각의 누적. 메인은 한 번에 한 단계만 한다.
+- 서브에이전트는 별도 세션이다. 그 세션의 사용량을 따로 계산한다.
+- `map.js`는 맵 서버가 응답할 때 계산한다. 세션 기록 반영이 늦으면 다음 화면 갱신 때 값이 나타난다.
+- 계산에 쓸 사용량 기록은 에이전트가 특정해 `usage`로 보낸다. `map.js`는 런타임 이름이 아니라 기록 형식(`kind`)으로 계산한다.
+
+| `kind` | 기록 형식 | 누적 사용량 |
+|---|---|---|
+| `message` | 줄마다 `timestamp`와 `message.usage`가 있다 | 그 시각까지 메시지별 `input_tokens` + `cache_creation_input_tokens` + `output_tokens`의 합 |
+| `total` | 줄마다 `timestamp`와 `payload.info.total_token_usage`가 있다 | 그 시각까지 마지막 값의 `input_tokens` - `cached_input_tokens` + `output_tokens` |
+
+### 사용량 기록 특정
+
+실행 흐름의 첫 스킬이 실행 시작 이벤트를 보내기 전에 한 번 한다.
+
+1. 자기 모델 이름을 확인한다.
+2. 환경 변수로 런타임을 확인한다.
+3. 아래 표에서 그 런타임의 메인 기록을 찾는다. 파일이 정확히 하나일 때만 `usage`로 보낸다.
+4. 서브에이전트 단계가 끝나면 서브에이전트 기록을 찾아 완료 이벤트의 `usage`로 보낸다. 런타임 결과에 사용량이 있으면 `tok`을 직접 보내도 된다.
+
+| 런타임 | 확인 | 메인 기록 (`kind`) | 서브에이전트 기록 (`kind`) |
+|---|---|---|---|
+| Claude Code | `CLAUDE_CODE_SESSION_ID` | `~/.claude/projects/*/<CLAUDE_CODE_SESSION_ID>.jsonl` (`message`) | `<메인 기록에서 .jsonl을 뺀 폴더>/subagents/agent-<agentId>.jsonl` (`message`). `agentId`는 Agent 도구 결과에 있다 |
+| Codex | `CODEX_THREAD_ID` | `${CODEX_HOME:-~/.codex}/sessions/**/rollout-*-<CODEX_THREAD_ID>.jsonl` (`total`) | 첫 줄 `session_meta`의 `source.subagent.thread_spawn`에서 `parent_thread_id`가 자기 thread id이고 `agent_path`가 `spawn_agent` 결과의 `task_name`인 rollout 파일 (`total`) |
+
+- 표에 없는 런타임은 같은 원칙으로 추론한다: 자기 세션 id로 시각과 사용량이 있는 기록 하나를 특정한다. 형식이 위 `kind`와 맞을 때만 보낸다.
+- 기록을 하나로 특정하지 못하면 `usage`를 보내지 않는다. 추측하지 않는다. 이때 토큰은 비어 있다.
 
 ## 완료
 

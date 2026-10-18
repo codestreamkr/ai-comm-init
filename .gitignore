@@ -4,3 +4,6 @@
 .skill-lock.json
 skills/*
 !skills/ct-*/
+
+# ct 스킬 기록은 이 저장소에서 관리하지 않는다.
+.debrief/

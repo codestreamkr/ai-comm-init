@@ -48,7 +48,7 @@ ct 스킬의 결정과 이해 상태를 기록한다.
 | 공유 저장소 | `.debrief/decisions/` | `.debrief/journal/`, `.debrief/debt.md` |
 
 - `decisions/`는 팀 모두에게 필요한 결정과 이유다. `journal/`과 `debt.md`는 개인 기록이다.
-- `.debrief/`를 처음 만들 때 저장소 성격을 판단한다. 근거가 없으면 사용자에게 한 번 묻는다.
+- `.debrief/`를 처음 만들 때 저장소 성격을 판단한다. 근거가 없으면 `ct-plan`의 일괄 질문에서 받은 답을 쓴다. 단독 실행이면 그때 한 번 묻는다.
 - 공유 저장소로 정하면 `.gitignore`에 두 줄을 추가한다. 이후에는 `.gitignore`를 보고 판단한다.
 
 ### 실행 기록 (`journal/YYYY-MM.md`)
