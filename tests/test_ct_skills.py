@@ -1,4 +1,6 @@
 """임시 저장소와 HTTP 서버에서 CT 스킬의 승인 범위와 토큰 계산을 검증한다."""
+import hashlib
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
@@ -6,8 +8,10 @@ import shutil
 import socket
 import subprocess
 import tempfile
+import threading
 import time
 import unittest
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 
@@ -169,7 +173,7 @@ class MapTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
         self.env = dict(os.environ, TMPDIR=str(self.root), TMP=str(self.root),
-                        TEMP=str(self.root))
+                        TEMP=str(self.root), CT_MAP_SESSION='test:tokens')
         self.usage = self.root / 'usage.jsonl'
         self.usage.touch()
         self.repo = self.root / 'repo'
@@ -271,6 +275,199 @@ class MapTests(unittest.TestCase):
         self.count(3, 250, 40, 30)
         self.start_run()
         self.assertEqual(self.completed_step()['tok'], 150)
+
+
+@unittest.skipUnless(NODE, 'Node.js가 필요하다.')
+class MapSessionTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='ct-session-test-')
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        self.repo = self.root / 'repo'
+        self.repo.mkdir()
+        self.env = {key: value for key, value in os.environ.items()
+                    if key not in ('CT_MAP_SESSION', 'CODEX_THREAD_ID',
+                                   'CLAUDE_CODE_SESSION_ID')}
+        self.env.update(TMPDIR=str(self.root), TMP=str(self.root), TEMP=str(self.root))
+        self.codex = dict(self.env, CODEX_THREAD_ID='thread-one')
+        self.claude = dict(self.env, CLAUDE_CODE_SESSION_ID='thread-one')
+
+    def cli(self, command, *args, env=None, code=0):
+        result = subprocess.run([NODE, str(MAP), command, *map(str, args)],
+                                env=self.env if env is None else env,
+                                text=True, capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, code, result.stderr or result.stdout)
+        return result.stdout.strip()
+
+    def emit(self, env, event, repo=None):
+        self.cli('emit', repo or self.repo, json.dumps(event), env=env)
+
+    def run_event(self, title, model):
+        return {'run': 'same-run', 'title': title, 'model': model,
+                'steps': [{'id': 'same-step', 'name': title}]}
+
+    def seed(self, env, title, model):
+        self.emit(env, self.run_event(title, model))
+        self.emit(env, {'run': 'same-run', 'step': 'same-step', 's': 'done'})
+        self.emit(env, {'run': 'same-run', 'adr': {
+            'id': 'same-adr', 'title': title + ' ADR', 's': 'cand'}})
+
+    @staticmethod
+    def get(url, endpoint):
+        with urlopen(url + endpoint, timeout=2) as response:
+            return response.read().decode('utf-8')
+
+    def start_server(self, env):
+        with socket.socket() as listener:
+            listener.bind(('127.0.0.1', 0))
+            port = listener.getsockname()[1]
+        url = f'http://127.0.0.1:{port}'
+        server = subprocess.Popen([NODE, str(MAP), 'serve', '--port', str(port)],
+                                  env=env, stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL)
+
+        def cleanup():
+            if server.poll() is None:
+                server.terminate()
+                try:
+                    server.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    server.kill()
+                    server.wait(timeout=3)
+        self.addCleanup(cleanup)
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                self.get(url, '/session')
+                return port, url, server
+            except OSError:
+                if server.poll() is not None or time.monotonic() >= deadline:
+                    self.fail('세션 맵 서버가 시작되지 않았다.')
+                time.sleep(0.02)
+
+    def test_same_repo_run_step_and_adr_are_isolated_and_clear_is_local(self):
+        self.seed(self.codex, 'Codex 작업', 'gpt-model')
+        self.seed(self.claude, 'Claude 작업', 'claude-model')
+        codex_file = Path(self.cli('path', self.repo, env=self.codex))
+        claude_file = Path(self.cli('path', self.repo, env=self.claude))
+        self.assertNotEqual(codex_file, claude_file)
+        self.assertEqual(len(codex_file.read_text().splitlines()), 3)
+        self.assertEqual(len(claude_file.read_text().splitlines()), 3)
+        self.assertIn('Codex', codex_file.read_text())
+        self.assertNotIn('Claude', codex_file.read_text())
+        self.assertIn('Claude', claude_file.read_text())
+        self.assertNotIn('Codex', claude_file.read_text())
+        self.cli('clear', self.repo, env=self.codex)
+        self.assertFalse(codex_file.exists())
+        self.assertTrue(claude_file.exists())
+
+    def test_threads_in_same_app_have_distinct_paths(self):
+        second = dict(self.codex, CODEX_THREAD_ID='thread-two')
+        self.assertNotEqual(self.cli('path', self.repo, env=self.codex),
+                            self.cli('path', self.repo, env=second))
+        claude_second = dict(self.claude, CLAUDE_CODE_SESSION_ID='thread-two')
+        self.assertNotEqual(self.cli('path', self.repo, env=self.claude),
+                            self.cli('path', self.repo, env=claude_second))
+
+    def test_missing_and_ambiguous_session_fail_for_every_command(self):
+        ambiguous = dict(self.codex, CLAUDE_CODE_SESSION_ID='thread-one')
+        for env in (self.env, ambiguous):
+            for command, args in (
+                    ('path', (self.repo,)), ('clear', (self.repo,)),
+                    ('emit', (self.repo, json.dumps(self.run_event('x', 'm')))),
+                    ('serve', ('--port', '0')), ('status', ()), ('stop', ())):
+                with self.subTest(command=command, ambiguous=env is ambiguous):
+                    self.cli(command, *args, env=env, code=1)
+
+    def test_explicit_session_and_environment_override_ambient_ids(self):
+        ambiguous = dict(self.codex, CLAUDE_CODE_SESSION_ID='thread-one',
+                         CT_MAP_SESSION='chosen-env')
+        expected_env = dict(self.env, CT_MAP_SESSION='chosen-env')
+        self.assertEqual(self.cli('path', self.repo, env=ambiguous),
+                         self.cli('path', self.repo, env=expected_env))
+        explicit = self.cli('path', self.repo, '--session', 'chosen-flag', env=ambiguous)
+        self.assertEqual(explicit, self.cli('path', self.repo, env=dict(
+            self.env, CT_MAP_SESSION='chosen-flag')))
+        self.assertNotEqual(explicit, self.cli('path', self.repo, env=ambiguous))
+
+    def test_session_id_uses_hash_and_cannot_escape_data_root(self):
+        session = '../../outside/한글/..'
+        env = dict(self.env, CT_MAP_SESSION=session)
+        self.seed(env, '격리 작업', 'model')
+        file = Path(self.cli('path', self.repo, env=env))
+        expected = self.root / 'ct-progress' / 'sessions' / hashlib.sha256(
+            session.encode()).hexdigest()
+        self.assertEqual(file.parent.parent, expected)
+        self.assertEqual(file.name, 'live.jsonl')
+        self.assertTrue(file.is_file())
+        self.assertFalse((self.root / 'outside').exists())
+
+    def test_two_servers_expose_only_their_session_and_recent_repo(self):
+        self.seed(self.codex, 'Codex 작업', 'gpt-model')
+        self.seed(self.claude, 'Claude 작업', 'claude-model')
+        _, codex_url, _ = self.start_server(self.codex)
+        _, claude_url, _ = self.start_server(self.claude)
+        for url, session, own_title, other_title, model in (
+                (codex_url, 'codex:thread-one', 'Codex', 'Claude', 'gpt-model'),
+                (claude_url, 'claude:thread-one', 'Claude', 'Codex', 'claude-model')):
+            with self.subTest(session=session):
+                self.assertEqual(json.loads(self.get(url, '/session')), {'id': session})
+                live = self.get(url, '/live.jsonl')
+                events = [json.loads(line) for line in live.splitlines()]
+                self.assertEqual(events[0]['model'], model)
+                self.assertEqual(events[2]['adr']['title'], own_title + ' 작업 ADR')
+                self.assertNotIn(other_title, live)
+                for endpoint in ('/repos', '/live.jsonl'):
+                    self.assertEqual(self.get(url, endpoint + '?session=' + session),
+                                     self.get(url, endpoint))
+                    with self.assertRaises(HTTPError) as error:
+                        self.get(url, endpoint + '?session=another-session')
+                    self.assertEqual(error.exception.code, 409)
+        before = json.loads(self.get(codex_url, '/repos'))
+        other_repo = self.root / 'other-repo'
+        other_repo.mkdir()
+        self.emit(self.claude, self.run_event('다른 저장소', 'claude-model'), other_repo)
+        self.assertEqual(json.loads(self.get(codex_url, '/repos')), before)
+        self.assertIn('Codex', self.get(codex_url, '/live.jsonl'))
+        self.assertEqual(len(json.loads(self.get(claude_url, '/repos'))), 2)
+        self.assertIn('다른 저장소', self.get(claude_url, '/live.jsonl'))
+
+    def test_status_and_stop_reject_another_session_and_preserve_server(self):
+        port, url, server = self.start_server(self.codex)
+        self.cli('status', '--port', port, env=self.codex)
+        self.cli('status', '--port', port, env=self.claude, code=2)
+        self.cli('stop', '--port', port, env=self.claude, code=1)
+        self.assertIsNone(server.poll())
+        self.assertEqual(json.loads(self.get(url, '/session')), {'id': 'codex:thread-one'})
+        self.cli('stop', '--port', port, env=self.codex)
+        server.wait(timeout=3)
+        self.assertEqual(server.returncode, 0)
+
+
+    def test_status_distinguishes_old_version_with_same_session(self):
+        class OldMapHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = {'/repos': '[]', '/version': 'old-version',
+                        '/session': '{"id":"codex:thread-one"}'}.get(self.path)
+                self.send_response(200 if body is not None else 404)
+                self.end_headers()
+                self.wfile.write((body or '').encode())
+
+            def log_message(self, *args):
+                pass
+
+        server = ThreadingHTTPServer(('127.0.0.1', 0), OldMapHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        def cleanup():
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=3)
+        self.addCleanup(cleanup)
+        port = server.server_address[1]
+        self.cli('status', '--port', port, env=self.codex, code=3)
+        self.cli('status', '--port', port, env=self.claude, code=2)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 프로세스 맵 도구
-//   node map.js serve [--port N]             맵 서버 실행 (기본 포트 4319). 모든 저장소의 맵을 보여 준다
+//   node map.js serve [--port N]             현재 세션의 맵 서버 실행 (기본 포트 4319)
 //   node map.js emit <저장소> '<이벤트 JSON>' 이벤트 한 줄 추가
 //   node map.js emit <저장소> -              이벤트 JSON을 표준 입력으로 받는다 (Windows PowerShell 5.1용)
 //   node map.js clear <저장소>               현재 작업 데이터 삭제
@@ -8,6 +8,7 @@
 //   node map.js status [--port N]            서버 상태 확인. 종료 코드 0 실행 중, 1 꺼짐, 2 다른 프로그램이 포트 사용, 3 다른 버전의 맵 서버 실행 중
 //   node map.js stop [--port N]              맵 서버 종료
 // 데이터는 OS 임시 폴더에만 둔다. 저장소에는 파일을 남기지 않는다.
+// 모든 명령: --session <ID> 또는 CT_MAP_SESSION으로 세션 지정. 없으면 런타임 세션 ID를 쓴다.
 
 const http = require('http');
 const fs = require('fs');
@@ -30,9 +31,22 @@ const crypto = require('crypto');
 const STATUSES = ['start', 'done', 'fail', 'wait', 'skip'];
 const KINDS = ['message', 'total'];
 const HTML_FILE = path.join(__dirname, '..', 'assets', 'process-map.html');
-const ROOT = path.join(os.tmpdir(), 'ct-progress');
+let ROOT, session;
 // 실행 중인 서버가 이 파일과 같은 코드인지 확인하는 값
 const VERSION = crypto.createHash('sha1').update(fs.readFileSync(__filename)).digest('hex').slice(0, 12);
+
+function sessionId(explicit) {
+  const selected = explicit ?? process.env.CT_MAP_SESSION;
+  if (selected != null) {
+    if (!selected.trim()) throw new Error('빈 세션 ID는 사용할 수 없다.');
+    return selected;
+  }
+  const codex = process.env.CODEX_THREAD_ID, claude = process.env.CLAUDE_CODE_SESSION_ID;
+  if (codex && claude) throw new Error('런타임 세션 ID가 둘이다. --session 또는 CT_MAP_SESSION을 지정한다.');
+  if (codex) return `codex:${codex}`;
+  if (claude) return `claude:${claude}`;
+  throw new Error('세션 ID가 없다. --session 또는 CT_MAP_SESSION을 지정한다.');
+}
 
 // 저장소마다 폴더를 나눈다. 이름이 같은 저장소가 섞이지 않도록 절대 경로 해시를 붙인다.
 function repoKey(repo) {
@@ -156,7 +170,10 @@ function serve(port) {
       res.end(body);
     };
     if (url === '/') return fs.readFile(HTML_FILE, (err, buf) => err ? send(500, 'text/plain', String(err)) : send(200, 'text/html; charset=utf-8', buf));
+    const expectedSession = new URLSearchParams(query).get('session');
+    if (expectedSession != null && expectedSession !== session) return send(409, 'text/plain; charset=utf-8', '세션이 일치하지 않는다.');
     if (url === '/repos') return send(200, 'application/json; charset=utf-8', JSON.stringify(repos()));
+    if (url === '/session') return send(200, 'application/json; charset=utf-8', JSON.stringify({ id: session }));
     if (url === '/version') return send(200, 'text/plain', VERSION);
     if (url === '/stop') { send(200, 'text/plain', 'stopped'); return server.close(() => process.exit(0)); }
     if (url === '/live.jsonl') {
@@ -167,7 +184,7 @@ function serve(port) {
     }
     send(404, 'text/plain', 'not found');
   });
-  server.listen(port, '127.0.0.1', () => console.log(`process map: http://127.0.0.1:${port}\ndata: ${ROOT}\nversion: ${VERSION}`));
+  server.listen(port, '127.0.0.1', () => console.log(`process map: http://127.0.0.1:${port}/?session=${encodeURIComponent(session)}\nsession: ${session}\ndata: ${ROOT}\nversion: ${VERSION}`));
 }
 
 function get(url, done) {
@@ -180,38 +197,48 @@ function get(url, done) {
   req.on('error', err => done(err));
 }
 
-// 맵 서버만 /repos에 JSON 배열로 응답한다. 이것으로 다른 프로그램과 구분한다.
+// 다른 세션과 이전 공유 서버는 재사용하거나 종료하지 않는다.
 function status(port) {
   const url = `http://127.0.0.1:${port}`;
-  get(`${url}/repos`, (err, code, body) => {
+  get(`${url}/session`, (err, code, body) => {
     if (err) { console.log(`stopped ${url}`); process.exit(1); }
     let ours = false;
-    try { ours = Array.isArray(JSON.parse(body)); } catch {}
-    if (!ours) { console.error(`다른 프로그램이 쓰는 포트다: ${port}. --port로 다른 포트를 지정한다.`); process.exit(2); }
+    try { ours = code === 200 && JSON.parse(body).id === session; } catch {}
+    if (!ours) { console.error(`다른 세션 또는 프로그램이 쓰는 포트다: ${port}. --port로 다른 포트를 지정한다.`); process.exit(2); }
     get(`${url}/version`, (err2, code2, ver) => {
-      if (!err2 && code2 === 200 && ver.trim() === VERSION) { console.log(`running ${url}`); process.exit(0); }
+      if (!err2 && code2 === 200 && ver.trim() === VERSION) { console.log(`running ${url}/?session=${encodeURIComponent(session)}`); process.exit(0); }
       console.error(`다른 버전의 맵 서버다: ${url}. stop으로 끄고 serve로 다시 연다.`);
       process.exit(3);
     });
   });
 }
 
-// /stop이 없는 이전 버전 서버는 끌 수 없다. 그 포트를 쓰는 프로세스를 직접 종료하도록 알린다.
+// 현재 세션의 서버만 종료한다.
 function stop(port) {
   const url = `http://127.0.0.1:${port}`;
-  get(`${url}/stop`, (err, code) => {
+  get(`${url}/session`, (err, code, body) => {
     if (err) { console.log(`stopped ${url}`); process.exit(0); }
-    if (code === 200) { console.log(`stopped ${url}`); process.exit(0); }
-    console.error(`종료 요청을 지원하지 않는 서버다: ${url}. 포트 ${port}를 쓰는 프로세스를 직접 종료한다.`);
-    process.exit(1);
+    let ours = false;
+    try { ours = code === 200 && JSON.parse(body).id === session; } catch {}
+    if (!ours) { console.error(`현재 세션의 서버가 아니므로 종료하지 않는다: ${url}`); process.exit(1); }
+    get(`${url}/stop?session=${encodeURIComponent(session)}`, (stopErr, stopCode) => {
+      if (!stopErr && stopCode === 200) { console.log(`stopped ${url}`); process.exit(0); }
+      console.error(`서버 종료에 실패했다: ${url}`);
+      process.exit(1);
+    });
   });
 }
 
 const [cmd, ...args] = process.argv.slice(2);
 const portIdx = args.indexOf('--port');
 const port = portIdx >= 0 ? Number(args.splice(portIdx, 2)[1]) : Number(process.env.CT_MAP_PORT || 4319);
+const sessionIdx = args.indexOf('--session');
+const sessionArg = sessionIdx >= 0 ? args.splice(sessionIdx, 2)[1] : undefined;
 
 try {
+  if (sessionIdx >= 0 && sessionArg == null) throw new Error('--session 뒤에 세션 ID를 지정한다.');
+  session = sessionId(sessionArg);
+  ROOT = path.join(os.tmpdir(), 'ct-progress', 'sessions', crypto.createHash('sha256').update(session).digest('hex'));
   if (cmd === 'serve') serve(port);
   else if (cmd === 'emit') emit(args[0], args[1] === '-' ? fs.readFileSync(0, 'utf8') : args[1]);
   else if (cmd === 'clear') fs.rmSync(dataFile(args[0]), { force: true });

@@ -89,7 +89,7 @@
 </head>
 <body>
 <main>
-  <div class="top"><div class="runs" id="runs"></div><span class="right"><select id="repo" class="repo" hidden></select><span class="conn" id="conn"><i></i><span>연결됨</span></span></span></div>
+  <div class="top"><div class="runs" id="runs"></div><span class="right"><span class="conn" id="session"></span><select id="repo" class="repo" hidden></select><span class="conn" id="conn"><i></i><span>연결됨</span></span></span></div>
   <section class="card hero" id="hero"><div class="empty">실행 중인 스킬이 없습니다.</div></section>
   <section class="card map"><svg id="flow" role="img" aria-label="단계 흐름도"></svg></section>
   <section class="card adr" id="adr"></section>
@@ -108,6 +108,7 @@ const whoOf = (s, r) => s.user ? '나' : short(s.m || s.agent || r.model) || '�
 const ADR_KO = { cand: '후보', ok: '확정', drop: '폐기' };
 // repoPick이 비어 있으면 가장 최근에 갱신된 저장소를 따라간다.
 let lastText = null, runs = [], adrs = [], pick = null, repoPick = '', repoList = '';
+let session = new URLSearchParams(location.search).get('session');
 
 // 이벤트를 실행(run) 단위로 모은다. 실행 시작 → 단계 추가 → 상태 변경 순으로 적용한다.
 // ADR 후보는 실행과 관계없이 작업 전체에서 모은다. 같은 id를 다시 보내면 상태와 필드를 바꾼다.
@@ -198,7 +199,14 @@ function renderFlow(r) {
 }
 
 function render() {
-  if (!runs.length) return;
+  if (!runs.length) {
+    $('runs').innerHTML = '';
+    $('hero').className = 'card hero';
+    $('hero').innerHTML = '<div class="empty">실행 중인 스킬이 없습니다.</div>';
+    $('flow').innerHTML = '';
+    $('adr').innerHTML = '';
+    return;
+  }
   const r = runs.find(x => x.id === pick) || runs[runs.length - 1];
   $('runs').innerHTML = runs.map(x => `<button class="run ${x === r ? 'sel' : ''}" data-id="${esc(x.id)}"><i>${ICON[x.state] || '○'}</i>${esc(x.skill || x.id)}${x.title ? ` · ${esc(x.title)}` : ''}</button>`).join('');
 
@@ -227,7 +235,23 @@ function render() {
 
 async function tick() {
   try {
-    const list = await (await fetch('repos?' + Date.now(), { cache: 'no-store' })).json();
+    const identity = await (await fetch('session', { cache: 'no-store' })).json();
+    if (typeof identity.id !== 'string' || !identity.id || (session !== null && session !== identity.id)) {
+      runs = []; adrs = []; lastText = null;
+      throw new Error('세션 불일치');
+    }
+    if (session === null) {
+      session = identity.id;
+      const url = new URL(location.href);
+      url.searchParams.set('session', session);
+      history.replaceState(null, '', url);
+    }
+    $('session').textContent = session.length > 24 ? session.slice(0, 24) + '…' : session;
+    $('session').title = session;
+    const scope = `session=${encodeURIComponent(session)}`;
+    const listResponse = await fetch(`repos?${scope}&t=${Date.now()}`, { cache: 'no-store' });
+    if (!listResponse.ok) throw new Error('세션 불일치');
+    const list = await listResponse.json();
     const sig = list.map(x => x.key).join('|');
     if (sig !== repoList) {
       repoList = sig;
@@ -236,13 +260,16 @@ async function tick() {
       $('repo').value = repoPick;
     }
     const key = repoPick || (list[0] || {}).key || '';
-    const text = await (await fetch(`live.jsonl?repo=${encodeURIComponent(key)}&t=${Date.now()}`, { cache: 'no-store' })).text();
+    const response = await fetch(`live.jsonl?${scope}&repo=${encodeURIComponent(key)}&t=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('세션 불일치');
+    const text = await response.text();
     $('conn').className = 'conn';
     $('conn').lastElementChild.textContent = '연결됨';
     if (text !== lastText) { lastText = text; runs = build(text); }
-  } catch {
+  } catch (err) {
+    if (err.message === '세션 불일치') { runs = []; adrs = []; lastText = null; }
     $('conn').className = 'conn off';
-    $('conn').lastElementChild.textContent = '연결 끊김';
+    $('conn').lastElementChild.textContent = err.message === '세션 불일치' ? '세션 불일치' : '연결 끊김';
   }
   render();
 }
