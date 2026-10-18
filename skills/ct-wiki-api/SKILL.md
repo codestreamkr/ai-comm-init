@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # CT Wiki API
 
-실행 계약은 `scripts/wiki-api.ps1`이다. 로컬 Markdown 위키는 `ct-wiki-ops`가 담당한다.
+실행 계약은 `scripts/wiki-api.ps1`이다.
 
 ## 호출
 

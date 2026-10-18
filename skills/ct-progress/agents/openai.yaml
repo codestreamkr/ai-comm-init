@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-progress"
+  short_description: "ct 스킬 진행 단계·수행 주체·상태·토큰을 프로세스 맵에 실시간 표시"
+  default_prompt: "$ct-progress 역할, 필요한 입력과 대표 예제를 안내해 주세요."
+policy:
+  allow_implicit_invocation: false

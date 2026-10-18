@@ -70,6 +70,15 @@
 테스트가 없으면 다른 검증 수단을 쓴다.
 하지 못한 검증은 보고한다.
 
+### 이해 확인
+
+- `ct-plan` → `ct-apply` 흐름은 스킬 안에서 `ct-debrief`까지 이어진다. 이 절은 그 흐름 밖의 코드 변경에 적용한다.
+- 흐름 밖에서 코드를 변경했으면 커밋 전에 `ct-debrief`를 실행한다.
+- 문서, 오타, 포맷만 바꾼 변경은 `ct-debrief`가 요약만 하고 통과한다.
+- 커밋을 요청받으면 먼저 `node "$HOME/.agents/skills/ct-debrief/scripts/gate.js" check .`를 실행한다. `$HOME`은 bash, zsh, PowerShell에서 모두 홈 경로로 바뀐다.
+- Node.js가 없어 확인을 실행할 수 없으면 커밋하지 않는다. 사용자에게 알린다.
+- 확인에 실패하면 커밋하지 않는다. `ct-debrief`를 먼저 실행한다.
+
 ## 스킬 파일 위치
 
 - 스킬의 정본 위치는 `~/.agents/skills/<skill-name>/`이다.

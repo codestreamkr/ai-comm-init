@@ -1,1 +1,6 @@
 **/.DS_Store
+
+# skills CLI가 설치한 외부 스킬은 추적하지 않는다.
+.skill-lock.json
+skills/*
+!skills/ct-*/

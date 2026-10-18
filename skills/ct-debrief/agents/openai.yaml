@@ -1,0 +1,6 @@
+interface:
+  display_name: "ct-debrief"
+  short_description: "변경 이해 확인 질문, ADR 확정, 이해 부채 기록, 커밋 허용 표시"
+  default_prompt: "$ct-debrief 역할, 필요한 입력과 대표 예제를 안내해 주세요."
+policy:
+  allow_implicit_invocation: false

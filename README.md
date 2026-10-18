@@ -24,6 +24,15 @@ git clone https://github.com/codestreamkr/ai-comm-init.git $env:USERPROFILE\.age
 
 정본은 이 저장소(`~/.agents`)다. `~/.claude`, `~/.codex`, `~/.grok`, `~/.gemini`, `~/.pi/agent`는 정본을 가져다 쓰는 런타임 홈이다.
 
+### 요구 사항
+
+| 도구 | 용도 |
+| --- | --- |
+| git | 저장소 관리, 이해 게이트 통과 표시(`ct-debrief`) |
+| Node.js 18 이상 | 프로세스 맵(`ct-progress`), 이해 게이트 통과 표시(`ct-debrief`), 상태줄 |
+
+Node.js가 없으면 맵 표시와 통과 표시를 쓸 수 없다. 이때 커밋 전 이해 확인은 사용자 판단으로 진행한다.
+
 ## 2. 스킬 정본과 배치
 
 모든 공통 사용자 스킬의 원본은 `~/.agents/skills/<skill-name>`이다. 각 AI 런타임의

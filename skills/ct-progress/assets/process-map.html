@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프로세스 맵</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --line: #e3e6eb; --text: #1d2330; --muted: #6b7385;
+    --pending: #b7bdc8; --active: #2f6fed; --done: #1f9d6b; --wait: #d98a00; --fail: #d6453d;
+    --pending-bg: #ffffff; --active-bg: #eaf1ff; --wait-bg: #fff6e5; --fail-bg: #fdeceb; --done-bg: #e8f6ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1a1f27; --line: #2a313c; --text: #e6e9ef; --muted: #8e97a8;
+      --pending: #4a5262; --active: #5b8dff; --done: #3cc48d; --wait: #f0a72a; --fail: #f06a62;
+      --pending-bg: #1a1f27; --active-bg: #1c2a47; --wait-bg: #3a2c12; --fail-bg: #3d1e1c; --done-bg: #16322a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  main { max-width: 1440px; margin: 0 auto; padding: 16px 16px 40px; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .runs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .run { border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 999px; padding: 3px 12px; font: inherit; font-size: 12px; cursor: pointer; }
+  .run.sel { border-color: var(--text); color: var(--text); font-weight: 600; }
+  .run i { font-style: normal; margin-right: 4px; }
+  .right { display: inline-flex; align-items: center; gap: 10px; }
+  .repo { font: inherit; font-size: 12px; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; }
+  .conn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--done); }
+  .conn.off i { background: var(--fail); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+
+  .hero { border-width: 2px; }
+  .hero.active { border-color: var(--active); }
+  .hero.wait { border-color: var(--wait); background: var(--wait-bg); }
+  .hero.done { border-color: var(--done); }
+  .hero.fail { border-color: var(--fail); }
+  .hero .head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .hero .skill { font-size: 13px; color: var(--muted); }
+  .hero .skill b { color: var(--text); }
+  .hero .prog { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin: 8px 0 12px; }
+  .bar span { display: block; height: 100%; background: var(--done); transition: width .4s; }
+  .doing { display: flex; flex-direction: column; gap: 6px; }
+  .doing .row { display: flex; align-items: center; gap: 4px 10px; font-size: 18px; font-weight: 700; flex-wrap: wrap; }
+  .doing .row small { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .pulse { width: 12px; height: 12px; border-radius: 50%; background: var(--active); flex: none; animation: glow 1.4s infinite; }
+  .wait .pulse { background: var(--wait); }
+  .ask { margin-top: 10px; font-size: 15px; }
+  .ask b { color: var(--wait); }
+  .idle { font-size: 18px; font-weight: 700; color: var(--muted); }
+  @keyframes glow { 50% { opacity: .35; } }
+
+  .map { overflow-x: auto; }
+  .map svg { display: block; height: auto; margin: 0 auto; }
+  .n .shape { fill: var(--pending-bg); stroke: var(--pending); stroke-width: 1.5; }
+  .n .t1 { fill: var(--text); font-size: 14px; font-weight: 700; }
+  .n .t2 { fill: var(--muted); font-size: 12px; }
+  .n.done .shape { fill: var(--done-bg); stroke: var(--done); }
+  .n.active .shape { fill: var(--active-bg); stroke: var(--active); stroke-width: 2.5; animation: glow 1.4s infinite; }
+  .n.wait .shape { fill: var(--wait-bg); stroke: var(--wait); stroke-width: 2.5; animation: glow 1.4s infinite; }
+  .n.fail .shape { fill: var(--fail-bg); stroke: var(--fail); stroke-width: 2; }
+  .n.skip { opacity: .45; }
+  .n .st { font-size: 14px; font-weight: 700; }
+  .n.done .st { fill: var(--done); } .n.active .st { fill: var(--active); } .n.wait .st { fill: var(--wait); } .n.fail .st { fill: var(--fail); }
+  .badge rect { fill: var(--panel); stroke: var(--line); }
+  .badge text { fill: var(--muted); font-size: 10px; font-weight: 600; }
+  .badge.me rect { stroke: var(--wait); } .badge.me text { fill: var(--wait); }
+  .badge.sub rect { stroke: var(--active); } .badge.sub text { fill: var(--active); }
+  .e { fill: none; stroke: var(--pending); stroke-width: 1.5; }
+  .e.done { stroke: var(--done); }
+  .e.active { stroke: var(--active); stroke-width: 2; stroke-dasharray: 6 4; animation: flow .8s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -10; } }
+
+  .adr h2 { margin: 0 0 10px; font-size: 14px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .adr h2 small { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .adr table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .adr th, .adr td { text-align: left; padding: 8px; border-top: 1px solid var(--line); vertical-align: top; }
+  .adr th { color: var(--muted); font-weight: 600; font-size: 12px; border-top: 0; white-space: nowrap; }
+  .adr td.why { color: var(--muted); }
+  .adr tr.drop td { opacity: .5; }
+  .adr-wrap { overflow-x: auto; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+  .pill.cand { color: var(--wait); background: var(--wait-bg); } .pill.ok { color: var(--done); background: var(--done-bg); } .pill.drop { color: var(--muted); }
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><div class="runs" id="runs"></div><span class="right"><select id="repo" class="repo" hidden></select><span class="conn" id="conn"><i></i><span>연결됨</span></span></span></div>
+  <section class="card hero" id="hero"><div class="empty">실행 중인 스킬이 없습니다.</div></section>
+  <section class="card map"><svg id="flow" role="img" aria-label="단계 흐름도"></svg></section>
+  <section class="card adr" id="adr"></section>
+</main>
+<script>
+const ICON = { done: '✓', active: '●', wait: '?', fail: '✕', skip: '–', pending: '' };
+const KO = { done: '완료', active: '진행', wait: '응답 대기', fail: '실패', skip: '생략', pending: '대기' };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const dur = ms => { const s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? `${s}초` : `${Math.floor(s / 60)}분 ${s % 60}초`; };
+const tok = n => n ? (n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n)) : '';
+const short = m => String(m || '').replace(/^claude-/, '');
+// 단계를 수행하는 주체: 사용자, 서브에이전트 모델, 메인 모델
+// 기록에서 읽은 실제 모델(m)을 먼저 쓴다. 별칭(haiku 등)보다 버전이 정확하다.
+const whoOf = (s, r) => s.user ? '나' : short(s.m || s.agent || r.model) || '메인';
+const ADR_KO = { cand: '후보', ok: '확정', drop: '폐기' };
+// repoPick이 비어 있으면 가장 최근에 갱신된 저장소를 따라간다.
+let lastText = null, runs = [], adrs = [], pick = null, repoPick = '', repoList = '';
+
+// 이벤트를 실행(run) 단위로 모은다. 실행 시작 → 단계 추가 → 상태 변경 순으로 적용한다.
+// ADR 후보는 실행과 관계없이 작업 전체에서 모은다. 같은 id를 다시 보내면 상태와 필드를 바꾼다.
+function build(text) {
+  const evs = [];
+  for (const line of text.split('\n')) { try { if (line.trim()) evs.push(JSON.parse(line)); } catch {} }
+  evs.sort((a, b) => Date.parse(a.t) - Date.parse(b.t));
+  const map = new Map(), adrMap = new Map();
+  for (const e of evs) {
+    if (e.adr) adrMap.set(e.adr.id, { ...(adrMap.get(e.adr.id) || {}), ...e.adr });
+    if (e.steps) map.set(e.run, { id: e.run, skill: e.skill, title: e.title, model: e.model, t: e.t, steps: e.steps.map(s => ({ ...s })) });
+    const r = map.get(e.run);
+    if (!r) continue;
+    // 같은 id를 다시 add하면 기존 단계의 필드를 바꾼다. 예: 재검증 뒤로 선행 단계 이동
+    if (e.add) { const old = r.steps.find(x => x.id === e.add.id); old ? Object.assign(old, e.add) : r.steps.push({ ...e.add }); }
+    if (e.step) {
+      const s = r.steps.find(x => x.id === e.step);
+      if (!s) continue;
+      const st = e.s === 'start' ? 'active' : e.s;
+      if (st === 'active' && !s.t0) s.t0 = e.t;
+      if (st !== 'active' && st !== 'wait') s.t1 = e.t;
+      s.state = st;
+      s.tok = (s.tok || 0) + (e.tok || 0);
+      if (e.note) s.note = e.note;
+      if (e.m) s.m = e.m;
+      s.ask = st === 'wait' ? e.ask : null;
+    }
+    r.last = e.t;
+  }
+  for (const r of map.values()) {
+    r.steps.forEach(s => s.state = s.state || 'pending');
+    const st = r.steps.map(s => s.state);
+    r.state = st.includes('wait') ? 'wait' : st.includes('active') ? 'active' : st.every(x => x === 'done' || x === 'skip') ? 'done' : st.includes('fail') ? 'fail' : 'pending';
+  }
+  adrs = [...adrMap.values()];
+  return [...map.values()];
+}
+
+// 선행 단계(after) 깊이로 행을 정한다. 같은 행의 단계는 병렬이다. 노드 폭은 화면이 좁을 때만 줄인다.
+function layout(steps) {
+  const byId = Object.fromEntries(steps.map(s => [s.id, s]));
+  steps.forEach(s => { s.lv = null; });
+  const lv = id => { const s = byId[id]; if (!s) return -1; if (s.lv != null) return s.lv; s.lv = 0; s.lv = 1 + Math.max(-1, ...(s.after || []).map(lv)); return s.lv; };
+  steps.forEach(s => lv(s.id));
+  const rows = [];
+  steps.forEach(s => (rows[s.lv] = rows[s.lv] || []).push(s));
+  const P = 12, GX = 16, GY = 24, H = 62;
+  const maxN = Math.max(...rows.map(r => r.length));
+  const avail = $('flow').parentElement.clientWidth - 34;
+  const W = Math.max(140, Math.min(210, (avail - P * 2 - GX * (maxN - 1)) / maxN));
+  const width = P * 2 + maxN * W + (maxN - 1) * GX;
+  rows.forEach((r, i) => {
+    const rowW = r.length * W + (r.length - 1) * GX;
+    r.forEach((s, j) => { s.x = (width - rowW) / 2 + j * (W + GX); s.y = P + 10 + i * (H + GY); });
+  });
+  return { W, H, width, height: P * 2 + 10 + rows.length * (H + GY) - GY, byId };
+}
+
+function renderFlow(r) {
+  const { W, H, width, height, byId } = layout(r.steps);
+  const out = [];
+  r.steps.forEach(s => (s.after || []).forEach(a => {
+    const p = byId[a]; if (!p) return;
+    const x1 = p.x + W / 2, y1 = p.y + H, x2 = s.x + W / 2, y2 = s.y, my = (y1 + y2) / 2;
+    const cls = s.state === 'active' || s.state === 'wait' ? 'active' : p.state === 'done' ? 'done' : '';
+    out.push(`<path class="e ${cls}" d="M${x1} ${y1} C${x1} ${my}, ${x2} ${my}, ${x2} ${y2}"/>`);
+  }));
+  const maxChars = Math.floor((W - 44) / 13);
+  r.steps.forEach(s => {
+    const end = s.t1 ? Date.parse(s.t1) : Date.now();
+    // 노드 폭이 좁으면 토큰 표시를 생략한다. 글자 폭은 평균 7px로 계산한다.
+    const parts = [KO[s.state], s.t0 ? dur(end - Date.parse(s.t0)) : '', s.tok ? `${tok(s.tok)} 토큰` : ''].filter(Boolean);
+    let meta = parts.join(' · ');
+    if (meta.length * 7 > W - 28) meta = parts.slice(0, 2).join(' · ');
+    const who = whoOf(s, r);
+    const bw = who.length * 6.5 + 14;
+    const name = s.name.length > maxChars ? s.name.slice(0, maxChars) + '…' : s.name;
+    out.push(`<g class="n ${s.state}"><rect class="shape" x="${s.x}" y="${s.y}" width="${W}" height="${H}" rx="10"/>
+      <text class="st" x="${s.x + 14}" y="${s.y + 26}">${ICON[s.state]}</text>
+      <text class="t1" x="${s.x + (ICON[s.state] ? 34 : 14)}" y="${s.y + 26}">${esc(name)}</text>
+      <text class="t2" x="${s.x + 14}" y="${s.y + 46}">${esc(meta)}</text>
+      ${who ? `<g class="badge ${s.user ? 'me' : s.agent ? 'sub' : ''}"><rect x="${s.x + W - bw - 8}" y="${s.y - 8}" width="${bw}" height="16" rx="8"/><text x="${s.x + W - 8 - bw / 2}" y="${s.y + 3.5}" text-anchor="middle">${esc(who)}</text></g>` : ''}
+      <title>${esc(s.name)}${s.note ? ' — ' + esc(s.note) : ''}</title></g>`);
+  });
+  $('flow').setAttribute('viewBox', `0 0 ${width} ${height}`);
+  $('flow').setAttribute('width', width);
+  $('flow').innerHTML = out.join('');
+}
+
+function render() {
+  if (!runs.length) return;
+  const r = runs.find(x => x.id === pick) || runs[runs.length - 1];
+  $('runs').innerHTML = runs.map(x => `<button class="run ${x === r ? 'sel' : ''}" data-id="${esc(x.id)}"><i>${ICON[x.state] || '○'}</i>${esc(x.skill || x.id)}${x.title ? ` · ${esc(x.title)}` : ''}</button>`).join('');
+
+  const total = r.steps.filter(s => s.state !== 'skip').length;
+  const done = r.steps.filter(s => s.state === 'done').length;
+  const now = r.steps.filter(s => s.state === 'active' || s.state === 'wait');
+  const waitStep = now.find(s => s.state === 'wait');
+  const sumTok = r.steps.reduce((a, s) => a + (s.tok || 0), 0);
+  const body = now.length
+    ? `<div class="doing">${now.map(s => `<div class="row"><span class="pulse"></span>${esc(s.name)}<small>${s.user ? '사용자' : s.agent ? `서브에이전트 · ${esc(short(s.m || s.agent))}` : `메인 · ${esc(short(s.m || r.model) || '모델 미확인')}`}${s.note ? ` · ${esc(s.note)}` : ''}</small></div>`).join('')}</div>`
+    : `<div class="idle">${r.state === 'done' ? '모든 단계를 완료했습니다.' : r.state === 'fail' ? '실패한 단계가 있습니다.' : '다음 단계를 기다리는 중입니다.'}</div>`;
+  $('hero').className = `card hero ${r.state}`;
+  $('hero').innerHTML = `<div class="head"><div class="skill"><b>${esc(r.skill || r.id)}</b> · ${esc(r.title || '')}${r.model ? ` · 메인 ${esc(short(r.model))}` : ''}</div>
+      <div class="prog">${done} / ${total} 완료 · ${dur((r.state === 'done' ? Date.parse(r.last) : Date.now()) - Date.parse(r.t))} · 토큰 ${sumTok ? tok(sumTok) : '-'}</div></div>
+    <div class="bar"><span style="width:${total ? done / total * 100 : 0}%"></span></div>${body}
+    ${waitStep ? `<div class="ask"><b>응답 필요</b> · ${esc(waitStep.ask || waitStep.name)}</div>` : ''}`;
+
+  renderFlow(r);
+  const cnt = k => adrs.filter(a => (a.s || 'cand') === k).length;
+  $('adr').innerHTML = `<h2>ADR 후보<small>후보 ${cnt('cand')} · 확정 ${cnt('ok')} · 폐기 ${cnt('drop')}</small></h2>` + (adrs.length
+    ? `<div class="adr-wrap"><table><thead><tr><th>상태</th><th>결정</th><th>이유</th><th>출처</th></tr></thead><tbody>
+      ${adrs.map(a => { const k = a.s || 'cand'; return `<tr class="${k}"><td><span class="pill ${k}">${ADR_KO[k] || k}</span></td><td>${esc(a.title)}</td>
+        <td class="why">${esc(a.why || '이해 확인에서 받을 예정')}</td><td class="why">${esc(a.from || '')}</td></tr>`; }).join('')}</tbody></table></div>`
+    : '<div class="empty">아직 ADR 후보가 없습니다.</div>');
+}
+
+async function tick() {
+  try {
+    const list = await (await fetch('repos?' + Date.now(), { cache: 'no-store' })).json();
+    const sig = list.map(x => x.key).join('|');
+    if (sig !== repoList) {
+      repoList = sig;
+      $('repo').hidden = list.length < 2;
+      $('repo').innerHTML = `<option value="">최근 저장소 자동</option>` + list.map(x => `<option value="${esc(x.key)}" title="${esc(x.path)}">${esc(x.name)}</option>`).join('');
+      $('repo').value = repoPick;
+    }
+    const key = repoPick || (list[0] || {}).key || '';
+    const text = await (await fetch(`live.jsonl?repo=${encodeURIComponent(key)}&t=${Date.now()}`, { cache: 'no-store' })).text();
+    $('conn').className = 'conn';
+    $('conn').lastElementChild.textContent = '연결됨';
+    if (text !== lastText) { lastText = text; runs = build(text); }
+  } catch {
+    $('conn').className = 'conn off';
+    $('conn').lastElementChild.textContent = '연결 끊김';
+  }
+  render();
+}
+$('repo').onchange = () => { repoPick = $('repo').value; pick = null; lastText = null; tick(); };
+$('runs').onclick = e => { const b = e.target.closest('.run'); if (b) { pick = b.dataset.id; render(); } };
+window.addEventListener('resize', render);
+tick();
+setInterval(tick, 1500);
+</script>
+</body>
+</html>
