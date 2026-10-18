@@ -101,6 +101,9 @@ ct 스킬이 지금 어느 단계에서 무엇을 하는지 프로세스 맵에 
 | `message` | 줄마다 `timestamp`와 `message.usage`가 있다 | 그 시각까지 메시지별 `input_tokens` + `cache_creation_input_tokens` + `output_tokens`의 합 |
 | `total` | 줄마다 `timestamp`와 `payload.info.total_token_usage`가 있다 | 그 시각까지 마지막 값의 `input_tokens` - `cached_input_tokens` + `output_tokens` |
 
+- `total` 기록에 응답 항목(`response_item`)이 있으면 사용량을 직전 모델 응답의 시각에 연결한다.
+- 집계가 도구 완료 뒤에 기록되어도 해당 응답이 속한 단계에 반영한다. 응답 항목이 없으면 집계 시각을 쓴다.
+
 ### 사용량 기록 특정
 
 실행 흐름의 첫 스킬이 실행 시작 이벤트를 보내기 전에 한 번 한다.

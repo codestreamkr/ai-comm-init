@@ -64,11 +64,17 @@ function cumulative(usage) {
     let cum = 0;
     for (const x of [...byId.values()].sort((a, b) => a.t - b.t)) points.push({ t: x.t, cum: (cum += x.tok) });
   } else {
+    let responseTime;
     for (const line of fs.readFileSync(usage.file, 'utf8').split('\n')) {
-      if (!line.includes('total_token_usage')) continue;
       try {
-        const e = JSON.parse(line), u = ((e.payload || {}).info || {}).total_token_usage;
-        if (u) points.push({ t: Date.parse(e.timestamp) || 0, cum: (u.input_tokens || 0) - (u.cached_input_tokens || 0) + (u.output_tokens || 0) });
+        const e = JSON.parse(line), p = e.payload || {};
+        if (e.type === 'response_item' && (['function_call', 'custom_tool_call'].includes(p.type) || (p.type === 'message' && p.role === 'assistant'))) responseTime = Date.parse(e.timestamp);
+        const u = (p.info || {}).total_token_usage;
+        // 도구 완료 뒤 집계된 사용량도 그 도구를 호출한 응답 시각에 귀속한다.
+        if (u) {
+          points.push({ t: responseTime ?? (Date.parse(e.timestamp) || 0), cum: (u.input_tokens || 0) - (u.cached_input_tokens || 0) + (u.output_tokens || 0) });
+          responseTime = undefined;
+        }
       } catch {}
     }
   }
