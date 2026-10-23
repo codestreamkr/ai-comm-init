@@ -18,6 +18,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 GATE = ROOT / 'skills/ct-debrief/scripts/gate.js'
 MAP = ROOT / 'skills/ct-progress/scripts/map.js'
+STATS = ROOT / 'skills/ct-journal/scripts/stats.js'
 NODE = shutil.which('node')
 
 
@@ -164,6 +165,85 @@ class GateTests(unittest.TestCase):
         self.gate('check')
         self.git('add', '-u', '--', 'folder/second.txt')
         self.gate('check', succeeds=False)
+
+    def test_debrief_records_written_after_mark_are_approved(self):
+        self.write('A.txt', 'reviewed\n')
+        self.gate('mark', '--', 'A.txt')
+        (self.repo / '.debrief/decisions').mkdir(parents=True)
+        self.write('.debrief/decisions/0001-x.md', '# 0001. x\n')
+        self.git('add', '-A')
+        self.gate('check')
+        self.write('A.txt', 'later edit\n')
+        self.git('add', 'A.txt')
+        self.gate('check', succeeds=False)
+
+
+JOURNAL = """# 2026-10 실행 기록
+
+## 2026-10-18 apply-1 · ct-apply · 주문 취소
+
+- 결과: 완료 (단계 5/5, 검증 2회차 통과)
+
+## 2026-10-19 debrief-1 · ct-debrief · 주문 취소
+
+- 결과: 완료 (통과 표시)
+- 이해 확인: 1/3
+- 질문: 왜 · order · 정답 · 환불 우선 이유
+- 질문: 만약 · order · 재질문 후 정답 · 0원 환불
+- 질문: 어디 · pay · 오답 · 상태 변경 위치
+- ADR: c1 · 확정 · 0001
+- 부채: 추가 · pay · 상태 변경 위치
+- 질문: 모름 · order · 정답 · 유형 오류
+"""
+
+DEBT = """# 이해 부채
+
+| 도메인 | 관련 파일 | 질문 | 정답 요지 | 발생 실행 |
+|---|---|---|---|---|
+| pay | src/Pay.java | 상태 변경 위치 | `Pay.cancel` | 2026-10-19 debrief-1 |
+"""
+
+
+@unittest.skipUnless(NODE, 'Node.js가 필요하다.')
+class JournalStatsTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='ct-stats-test-')
+        self.addCleanup(self.temp.cleanup)
+        self.repo = Path(self.temp.name)
+        base = self.repo / '.debrief'
+        (base / 'journal').mkdir(parents=True)
+        (base / 'decisions/archive').mkdir(parents=True)
+        (base / 'journal/2026-10.md').write_text(JOURNAL, encoding='utf-8')
+        (base / 'debt.md').write_text(DEBT, encoding='utf-8')
+        (base / 'decisions/candidates.md').write_text('# ADR 후보\n\n| id | 결정 | 이유 | 출처 |\n|---|---|---|---|\n', encoding='utf-8')
+        (base / 'decisions/0001-x.md').write_text('# 0001. x\n\n- 상태: 채택\n- 도메인: order\n', encoding='utf-8')
+
+    def stats(self, *args, code=0):
+        result = subprocess.run([NODE, str(STATS), str(self.repo), *args],
+                                capture_output=True, encoding='utf-8')
+        self.assertEqual(result.returncode, code, result.stderr)
+        return result.stdout
+
+    def test_counts_questions_by_type_and_domain(self):
+        out = self.stats()
+        self.assertIn('| 전체 | 3 | 1 | 1 | 1 | 33% |', out)
+        self.assertIn('| order | 2 | 1 | 1 | 0 | 50% | 2026-10-19 debrief-1 |', out)
+        self.assertIn('재검증한 실행(2회차 이상): 1건 (2026-10-18 apply-1)', out)
+        self.assertIn('확정 1, 폐기 0, 보류 0', out)
+
+    def test_weak_domains_follow_rate_and_debt(self):
+        weak = self.stats().split('## 보강 대상 도메인')[1].split('## 형식 외 기록')[0]
+        self.assertIn('| order | 1/2 (50%) | 0 |', weak)
+        self.assertIn('| pay | 0/1 (0%) | 1 |', weak)
+
+    def test_malformed_lines_are_shown_not_dropped(self):
+        self.assertIn('| .debrief/journal/2026-10.md:16 | - 질문: 모름 · order · 정답 · 유형 오류 |', self.stats())
+
+    def test_period_filter_and_missing_records(self):
+        self.assertIn('(실행 기록 1건)', self.stats('--since', '2026-10-19'))
+        self.stats('--since', 'bad', code=1)
+        shutil.rmtree(self.repo / '.debrief')
+        self.assertIn('기록 없음', self.stats())
 
 
 @unittest.skipUnless(NODE, 'Node.js가 필요하다.')

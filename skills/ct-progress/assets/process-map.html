@@ -43,11 +43,8 @@
   .hero .prog { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin: 8px 0 12px; }
   .bar span { display: block; height: 100%; background: var(--done); transition: width .4s; }
-  .doing { display: flex; flex-direction: column; gap: 6px; }
-  .doing .row { display: flex; align-items: center; gap: 4px 10px; font-size: 18px; font-weight: 700; flex-wrap: wrap; }
-  .doing .row small { font-size: 13px; font-weight: 500; color: var(--muted); }
-  .pulse { width: 12px; height: 12px; border-radius: 50%; background: var(--active); flex: none; animation: glow 1.4s infinite; }
-  .wait .pulse { background: var(--wait); }
+  .current { font-size: 15px; }
+  .current b { color: var(--active); }
   .ask { margin-top: 10px; font-size: 15px; }
   .ask b { color: var(--wait); }
   .idle { font-size: 18px; font-weight: 700; color: var(--muted); }
@@ -208,17 +205,19 @@ function render() {
     return;
   }
   const r = runs.find(x => x.id === pick) || runs[runs.length - 1];
-  $('runs').innerHTML = runs.map(x => `<button class="run ${x === r ? 'sel' : ''}" data-id="${esc(x.id)}"><i>${ICON[x.state] || '○'}</i>${esc(x.skill || x.id)}${x.title ? ` · ${esc(x.title)}` : ''}</button>`).join('');
+  const summaryState = x => x.steps.some(s => s.state === 'active') ? 'active' : x.state;
+  $('runs').innerHTML = runs.map(x => `<button class="run ${x === r ? 'sel' : ''}" data-id="${esc(x.id)}"><i>${ICON[summaryState(x)] || '○'}</i>${esc(x.skill || x.id)}${x.title ? ` · ${esc(x.title)}` : ''}</button>`).join('');
 
   const total = r.steps.filter(s => s.state !== 'skip').length;
   const done = r.steps.filter(s => s.state === 'done').length;
-  const now = r.steps.filter(s => s.state === 'active' || s.state === 'wait');
-  const waitStep = now.find(s => s.state === 'wait');
+  const active = r.steps.filter(s => s.state === 'active');
+  const waitStep = active.length ? null : r.steps.find(s => s.state === 'wait');
   const sumTok = r.steps.reduce((a, s) => a + (s.tok || 0), 0);
-  const body = now.length
-    ? `<div class="doing">${now.map(s => `<div class="row"><span class="pulse"></span>${esc(s.name)}<small>${s.user ? '사용자' : s.agent ? `서브에이전트 · ${esc(short(s.m || s.agent))}` : `메인 · ${esc(short(s.m || r.model) || '모델 미확인')}`}${s.note ? ` · ${esc(s.note)}` : ''}</small></div>`).join('')}</div>`
+  const body = active.length
+    ? `<div class="current"><b>진행 중</b> · ${active.map(s => esc(s.name)).join(' · ')}</div>`
+    : waitStep ? ''
     : `<div class="idle">${r.state === 'done' ? '모든 단계를 완료했습니다.' : r.state === 'fail' ? '실패한 단계가 있습니다.' : '다음 단계를 기다리는 중입니다.'}</div>`;
-  $('hero').className = `card hero ${r.state}`;
+  $('hero').className = `card hero ${summaryState(r)}`;
   $('hero').innerHTML = `<div class="head"><div class="skill"><b>${esc(r.skill || r.id)}</b> · ${esc(r.title || '')}${r.model ? ` · 메인 ${esc(short(r.model))}` : ''}</div>
       <div class="prog">${done} / ${total} 완료 · ${dur((r.state === 'done' ? Date.parse(r.last) : Date.now()) - Date.parse(r.t))} · 토큰 ${sumTok ? tok(sumTok) : '-'}</div></div>
     <div class="bar"><span style="width:${total ? done / total * 100 : 0}%"></span></div>${body}

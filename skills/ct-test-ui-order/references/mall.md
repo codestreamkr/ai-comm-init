@@ -13,6 +13,8 @@
 | 수단 | `PAYMENT_TEST_METHOD_IDS` |
 | 수량 | `PAYMENT_TEST_QUANTITY` |
 | 옵션 | `PAYMENT_TEST_PRODUCT_OPTIONS_JSON` |
+| 상품·수단별 실행 매핑 | `PAYMENT_TEST_COMBINATION_MODE`, `PAYMENT_TEST_CASES_JSON` |
+| 동시 실행 | `PAYMENT_TEST_EXECUTION_MODE`, `PAYMENT_TEST_MAX_TABS`, `PAYMENT_TEST_SESSION_MODE`. 기존 `PAYMENT_TEST_MAX_WINDOWS`는 호환용 |
 | 인증 | `BRANDPAY_PAYMENT_NUMBER`, `NAVERPAY_PAYMENT_NUMBER` |
 | 로그인 | `PAYMENT_TEST_LOGIN_MODE`, `PAYMENT_TEST_USERNAME`, `PAYMENT_TEST_PASSWORD` |
 | 사용자 인증·실패 처리·수단 제외 정책 | `PAYMENT_TEST_MANUAL_AUTH`, `PAYMENT_TEST_AUTH_TIMEOUT_SECONDS`, `PAYMENT_TEST_CONTINUE_ON_FAILURE`, `PAYMENT_TEST_SKIP_UNAVAILABLE_METHOD` |
@@ -21,12 +23,14 @@
 | 완료 | `/mypg/orderMngResult.bene` |
 | 상세 | `/mypg/myOrderDetailView.bene` |
 
-1. 기본 주소는 `PAYMENT_TEST_BASE_URL`을 사용하라.
+1. 사용자가 제공한 `base URL`에서 시작하라. 제공하지 않았으면 `PAYMENT_TEST_BASE_URL`을 사용하라. HTTPS 기본값으로 임의 대체하지 마라.
 2. 사용자 인증·실패 처리·수단 제외 정책을 확인하라.
    등록된 테스트 비밀번호는 직접 사용할 수 있다. 앱 인증과 같은 별도 인증은 사용자에게 요청하라.
 3. 상품 추가가 필요하면 실제 상품 상세의 옵션을 선택하라.
 4. 장바구니의 대상 상품에서 `바로주문`으로 주문서를 열어라.
    실제 장바구니·상품 진입 흐름을 따라라. 주문서 URL만 직접 재사용하지 마라.
+5. 조합과 새 시도마다 같은 창에 새 탭을 추가하라. 시작 주소부터 진행하라.
+   기존 `/mypg/orderMngResult.bene` 화면을 새 주문에 재사용하지 마라.
 
 | sttlMeanId | 결제수단 |
 | --- | --- |

@@ -1,17 +1,24 @@
 #!/usr/bin/env node
 // 이해 게이트 통과 표시 도구
-//   node gate.js mark <저장소> [메모] -- <파일>... 확인한 파일만 반영한 트리에 통과 표시를 남긴다
+//   node gate.js mark <저장소> [메모] -- <파일>... 확인한 파일만 반영한 트리에 통과 표시를 남긴다 (.debrief/ 제외)
 //   node gate.js check <저장소>         커밋할 인덱스 상태에 통과 표시가 있는지 확인한다 (없으면 종료 코드 1)
 //   node gate.js tree <저장소> [--index] 작업 트리(기본) 또는 인덱스의 트리 id를 출력한다
 // 통과 표시는 <git-dir>/understand-gate/v2/<트리 id>에 둔다. 이전 버전 표시는 쓰지 않는다.
 // 작업 트리와 인덱스를 같은 트리 id로 비교하므로, 커밋 내용이 debrief 때와 같을 때만 통과한다.
+// ct 기록(.debrief/)은 이해 확인 대상이 아니므로 트리 비교에서 뺀다.
 
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+const EXCLUDE = '.debrief';
 const git = (repo, args, env) => execFileSync('git', args, { cwd: repo, env: { ...process.env, ...env }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+
+function writeTree(repo, env) {
+  git(repo, ['--literal-pathspecs', 'rm', '-r', '--cached', '-q', '--ignore-unmatch', '--', EXCLUDE], env);
+  return git(repo, ['write-tree'], env);
+}
 
 function worktreeTree(repo, files) {
   const tmp = path.join(os.tmpdir(), `ct-gate-index-${process.pid}`);
@@ -19,13 +26,22 @@ function worktreeTree(repo, files) {
   try {
     try { git(repo, ['read-tree', 'HEAD'], env); } catch { git(repo, ['read-tree', '--empty'], env); }
     git(repo, ['--literal-pathspecs', 'add', '-A', ...(files ? ['--', ...files] : [])], env);
-    return git(repo, ['write-tree'], env);
+    return writeTree(repo, env);
   } finally {
     fs.rmSync(tmp, { force: true });
   }
 }
 
-const indexTree = repo => git(repo, ['write-tree']);
+function indexTree(repo) {
+  const tmp = path.join(os.tmpdir(), `ct-gate-index-${process.pid}`);
+  const index = path.resolve(repo, git(repo, ['rev-parse', '--git-path', 'index']));
+  try {
+    if (fs.existsSync(index)) fs.copyFileSync(index, tmp);
+    return writeTree(repo, { GIT_INDEX_FILE: tmp });
+  } finally {
+    fs.rmSync(tmp, { force: true });
+  }
+}
 const markDir = repo => path.resolve(repo, git(repo, ['rev-parse', '--git-dir']), 'understand-gate', 'v2');
 
 const [cmd, inputRepo = '.', ...rest] = process.argv.slice(2);

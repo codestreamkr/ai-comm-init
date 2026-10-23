@@ -71,7 +71,7 @@ disable-model-invocation: true
 
 - 모든 요구사항이 통과하면 같은 작업 턴에서 [ct-debrief](../ct-debrief/SKILL.md)를 읽는다. 그 지침으로 이해 확인을 진행한다.
 - 막힌 요구사항이 남으면 이해 확인으로 넘어가지 않는다. 원인과 재개 지점을 보고한다.
-- 실행이 끝나면 `ct-journal` 지침으로 실행 기록과 ADR 후보를 남긴다.
+- 실행이 끝나면 `ct-journal` 지침으로 실행 기록과 ADR 후보를 남긴다. 이해 확인으로 넘어가면 이 기록을 `ct-debrief`의 기록 묶음에 넣는다.
 
 ## 완료
 
