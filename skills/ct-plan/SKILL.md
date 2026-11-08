@@ -26,8 +26,9 @@ disable-model-invocation: true
 
 - [ct-analyze](../ct-analyze/SKILL.md)를 읽고 그 지침으로 요청 범위의 코드를 분석한다.
 - 요청과 프로젝트를 조사한다. 확인한 사실, 해석, 미확인 사항을 구분한다.
-- `.debrief/decisions/candidates.md`의 미확정 ADR 후보를 확인한다. 남은 후보는 모두 계획 범위에 넣는다.
-- `.debrief/debt.md`의 이해 부채를 확인한다. 남은 항목은 모두 계획 범위에 넣는다.
+- `.debrief/decisions/candidates.md`의 미확정 ADR 후보를 확인한다. 현재 요청과 직접 관련된 후보만 계획 범위에 넣는다.
+- `.debrief/debt.md`의 이해 부채를 확인한다. 현재 요청과 직접 관련된 항목만 계획 범위에 넣는다.
+- ADR 후보와 이해 부채의 관련성은 요청한 변경의 설계·구현·검증에 영향을 주는지를 기준으로 판단한다.
 - 계획에 넣은 ADR 후보와 이해 부채는 `ct-debrief`에서 처리하도록 표시한다.
 - `.debrief/`가 있으면 [ct-journal](../ct-journal/SKILL.md)의 통계 명령으로 보강 대상 도메인을 확인한다.
 - 수정 영역이 보강 대상 도메인에 속하면 그 영역의 설명을 보강한다: 동작 흐름, 핵심 코드 위치, 실패 처리
